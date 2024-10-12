@@ -52,7 +52,7 @@ class Engine:
             )
 
         if load_default_plugins:
-            self.load_default_plugins()
+            self.load_default_injections()
 
     @classmethod
     def load_from_directory(
@@ -84,9 +84,9 @@ class Engine:
             configuration=config,
         )
 
-    def load_default_plugins(self) -> None:
+    def load_default_injections(self) -> None:
         """Loads a bunch of default, useful plugins"""
-        self.register_plugin(injections.raise_on_xxx)
+        self.register_plugin(injections.raise_on_todo)
 
     def register_plugin(self, plugin: Callable[[Engine], None]) -> Engine:
         """Register a given callable as a plugin.

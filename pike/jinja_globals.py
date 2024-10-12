@@ -15,3 +15,6 @@ def get_folder(engine: Engine, section_name: str) -> list[dict[str, typing.Any]]
             reverse=False,
         ),
     )
+
+def comment(comment_value: str) -> None:
+    """Raise a comment for review"""
