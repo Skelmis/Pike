@@ -1,0 +1,5 @@
+.idea
+example_report/documents
+poetry.lock
+docs/_build
+*.pyc
