@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import typing
 
 if typing.TYPE_CHECKING:
-    from pike import Engine
+    from pike import Engine, File
+
+log = logging.getLogger(__name__)
 
 
 def get_folder(engine: Engine, section_name: str) -> list[dict[str, typing.Any]]:
@@ -16,5 +19,11 @@ def get_folder(engine: Engine, section_name: str) -> list[dict[str, typing.Any]]
         ),
     )
 
-def comment(comment_value: str) -> None:
+
+def comment(file: File, comment_value: str) -> None:
     """Raise a comment for review"""
+    log.warning(
+        "Comment: '%s'\n\tFile: %s",
+        comment_value,
+        file.file,
+    )

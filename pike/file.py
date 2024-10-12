@@ -5,6 +5,7 @@ from functools import partial
 from pathlib import Path
 
 from pike import utils
+from pike import jinja_globals as jg
 
 if t.TYPE_CHECKING:
     from pike import Engine
@@ -19,6 +20,9 @@ class File:
         self._plugins: dict[
             str, t.Callable[[File], t.Any] | t.Callable[[File, ...], t.Any]
         ] = engine._file_plugins  # noqa
+        self._injections: dict[str, t.Callable[[File, ...], t.Any]] = {
+            "comment": partial(jg.comment, self)
+        }
 
         # TODO Create a test for this once virtual configurations
         #      are a supported method of File object creation
@@ -63,7 +67,7 @@ class File:
         for k, v in self._plugins.items():
             plugins[k] = partial(v, self)
 
-        local_variables = {**self.variables, "plugins": plugins}
+        local_variables = {**self.variables, "plugins": plugins, **self._injections}
         variables = {
             **local_variables,
             **self.engine.global_variables,
