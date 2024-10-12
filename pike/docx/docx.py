@@ -9,10 +9,11 @@ from docx.text.paragraph import Paragraph
 from docx.text.run import Run
 from markdown_it.token import Token
 
+from pike import utils
 from pike.docx import Variables, List
 
 if t.TYPE_CHECKING:
-    from pike import Engine, utils
+    from pike import Engine
 
     from docx.document import Document
 
