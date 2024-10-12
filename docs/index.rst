@@ -23,6 +23,8 @@ Welcome to Pike's documentation!
    modules/references/checks.rst
    modules/references/injections.rst
    modules/references/utility.rst
+   modules/references/docx.rst
+   modules/references/tables.rst
 
 
 Indices and tables

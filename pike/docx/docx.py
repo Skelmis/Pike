@@ -7,13 +7,12 @@ from docx import Document
 from docx.enum.text import WD_COLOR_INDEX
 from docx.text.paragraph import Paragraph
 from docx.text.run import Run
-from markdown_it import MarkdownIt
 from markdown_it.token import Token
 
 from pike.docx import Variables, List
 
 if t.TYPE_CHECKING:
-    from pike import Engine
+    from pike import Engine, utils
 
     from docx.document import Document
 
@@ -37,8 +36,7 @@ class Docx:
         Path
             The resultant docx file
         """
-        markdown = MarkdownIt().enable("table")
-        markdown.options["html"] = True
+        markdown = utils.create_markdown_it()
         ast = markdown.parse(content)
         template_file = (
             Document(self.engine.config["docx_template"])

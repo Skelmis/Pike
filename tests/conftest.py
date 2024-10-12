@@ -16,6 +16,19 @@ def example_report_dir() -> Path:
 
 
 @pytest.fixture
+def test_dir() -> Path:
+    if Path("example_report").exists():
+        return Path("tests").absolute()
+
+    return Path(".").absolute()
+
+
+@pytest.fixture
+def data_dir(test_dir) -> Path:
+    return test_dir / "data"
+
+
+@pytest.fixture
 def set_test_directory_to_example_report(monkeypatch, example_report_dir):
     monkeypatch.chdir(example_report_dir)
 

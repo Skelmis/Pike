@@ -15,13 +15,26 @@ class EnumBase(Enum):
 class CurrentRun:
     """Defines various presentation metadata for runs"""
 
-    def __init__(self):
+    def __init__(
+        self,
+        *,
+        bold: bool = None,
+        italic: bool = None,
+        underline: bool = None,
+        highlight: bool = None,
+    ):
         # We use None to imply that Docx
         # should inherit any parent styling
-        self.bold: bool | None = None
-        self.italic: bool | None = None
-        self.underline: bool | None = None
-        self.highlighted: bool | None = None
+        self.bold: bool | None = bold
+        self.italic: bool | None = italic
+        self.underline: bool | None = underline
+        self.highlighted: bool | None = highlight
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __repr__(self):
+        return f"CurrentRun({self.bold=},{self.italic=},{self.underline=},{self.highlighted=})"
 
 
 class CurrentListNesting(EnumBase):
@@ -49,6 +62,16 @@ class List:
         )
 
 
+class TableContext:
+    """Context about the next table"""
+
+    def __init__(
+        self, *, column_widths: list[float] = None, has_header_row: bool = True
+    ):
+        self.column_widths = column_widths
+        self.has_header_row = has_header_row
+
+
 class Variables:
     """Top level container for variable state"""
 
@@ -57,6 +80,7 @@ class Variables:
         # We use a list to support nested lists of different types
         self.current_lists: list[List] = []
         self._current_nesting: CurrentListNesting = CurrentListNesting.LEVEL_1
+        self.next_table_context: TableContext = TableContext()
 
     def get_current_list(self) -> List | None:
         if len(self.current_lists) == 0:

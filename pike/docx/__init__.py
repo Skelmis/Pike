@@ -1,4 +1,4 @@
-from .structs import CurrentRun, Variables, List, CurrentListNesting
+from .structs import CurrentRun, Variables, List, CurrentListNesting, TableContext
 from .docx import Docx
 
 __all__ = (
@@ -7,4 +7,5 @@ __all__ = (
     "List",
     "Variables",
     "CurrentListNesting",
+    "TableContext",
 )

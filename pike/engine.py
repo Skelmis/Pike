@@ -187,9 +187,6 @@ class Engine:
             ) as f:
                 f.write(self._layout_file.content)
 
-        # TODO Generate word document if save word document or save pdf
-        #      IF save pdf but no word, delete when done
-        # TODO Use word document to create PDF if save PDF
         if self.config["output_files"]["docx"] or self.config["output_files"]["pdf"]:
             docx = Docx(self)
             docx_file = docx.create_document(

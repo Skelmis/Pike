@@ -33,7 +33,9 @@ def run(
     load_default_plugins: bool
         Whether to load default useful plugins
     """
-    engine = Engine(report_directory, load_default_plugins=load_default_plugins)
+    engine = Engine.load_from_directory(
+        report_directory, load_default_plugins=load_default_plugins
+    )
     engine.run()
 
 
