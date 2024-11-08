@@ -159,3 +159,8 @@ called ``get_referenced_files`` which can be used like so:
   {% for reference in references -%}
   This file is referenced by **{{ reference.id }}**
   {% endfor -%}
+
+Jinja tips
+==========
+
+- When defining a block, finish it with ``-%}`` instead of ``%}`` to ensure it doesn't appear as a newline within the document.

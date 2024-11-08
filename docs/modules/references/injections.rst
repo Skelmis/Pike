@@ -6,5 +6,5 @@ to do anything the end developer may wish.
 
 .. py:currentmodule:: pike.injections
 
-.. autofunction:: raise_on_xxx
+.. autofunction:: raise_on_todo
 

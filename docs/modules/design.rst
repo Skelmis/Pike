@@ -1,11 +1,30 @@
 Design ideals
 -------------
 
-This aims to be a simplistic markdown to word generator.
+Goals
+=====
 
-Variables are implemented using Jinja, with the syntax here: https://jinja.palletsprojects.com/en/3.1.x/templates/
+1. This aims to be a simplistic markdown to word/pdf generator
+2. Variables are implemented using pre-existing solutions such as Jinja
+3. This software should be fast. Users shouldn't wait unreasonable time for a report to generate
 
-Syntax overall is markdown.
+1
+*
+Users should be able to write simple markdown files which are transformed into beautiful word / PDF documents. User's should not need to care about formatting beyond markdown.
+
+2
+*
+No reinventing the wheel. Variables and plugin hooks are done via Jinja. Specifically: https://jinja.palletsprojects.com/en/3.1.x/templates/
+
+3
+*
+Pike should be fast. Ideally there shouldn't be enough downtime to do something else like go grab a coffee.
+
+This will be archived by never touching Latex, and instead using word as an intermediary. This also provides more freedom to end users when they wish to create new templates.
+
+*grumbles about existing solutions taking enough time to make a coffee*
+
+
 
 Variable Namespace
 ==================
@@ -80,9 +99,5 @@ Runtime loop
 4. Update global lookup dict again
 5. Run all associated injections (By this point all files bar layout file should be filled)
 6. Inject said all files into the layout file
-7. Write the layout file to disk as markdown
+7. Write the layout file to disk as markdown/word/pdf
 
-Jinja tips
-==========
-
-- When defining a block, finish it with ``-%}`` instead of ``%}`` to ensure it doesn't appear as a newline within the document.
