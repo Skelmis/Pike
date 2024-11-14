@@ -78,7 +78,7 @@ When injecting a file the namespace looks like this:
       "one": "FV"
     },
     "folders": {
-      "content": ["FV"]
+      "content": {"one": "FV"}
     },
     "project_id": "Test",
     "globals": {

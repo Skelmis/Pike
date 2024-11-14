@@ -38,7 +38,7 @@ class Engine:
             str, Callable[[File], Any] | Callable[[File, ...], Any]
         ] = {}
         self._file_variables: dict[str, dict[str, Any]] = {}
-        self._folder_variables: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        self._folder_variables: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
 
         if self.config["use_sandbox"]:
             self.jinja_env: SandboxedEnvironment = SandboxedEnvironment(
@@ -230,11 +230,11 @@ class Engine:
         # Reset before we do this so that
         # we don't end up with duplicates
         self._file_variables: dict[str, dict[str, Any]] = {}
-        self._folder_variables: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        self._folder_variables: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
 
         for file in self.files:
             self._file_variables[file.id] = file.layout_variables
-            self._folder_variables[file.folder.name].append(file.layout_variables)
+            self._folder_variables[file.folder.name][file.id] = file.layout_variables
 
         # Mutate globals for usage
         self.global_variables["files"] = self._file_variables
