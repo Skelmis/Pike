@@ -1,6 +1,7 @@
 {
   "layout_file": "layout.md",
   "docx_template": "",
+  "docx_create_list_styles": false,
   "output_document_name": "{{title}}",
   "output_directory": "documents",
   "styles": {
@@ -8,16 +9,12 @@
     "bullet_lists": {
       "level_1": "List Paragraph",
       "level_2": "List Paragraph 2",
-      "level_3": "List Paragraph 3",
-      "level_4": "List Paragraph 4",
-      "level_5": "List Paragraph 5"
+      "level_3": "List Paragraph 3"
     },
     "ordered_lists": {
       "level_1": "List Paragraph",
       "level_2": "List Paragraph 2",
-      "level_3": "List Paragraph 3",
-      "level_4": "List Paragraph 4",
-      "level_5": "List Paragraph 5"
+      "level_3": "List Paragraph 3"
     }
   },
   "output_files": {

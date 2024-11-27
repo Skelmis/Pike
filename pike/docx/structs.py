@@ -54,6 +54,9 @@ class List:
         self.list_type = list_type
         self.nesting = nesting
 
+    def __repr__(self):
+        return f"List({self.list_type=}, {self.nesting=})"
+
     def __eq__(self, other):
         return (
             isinstance(other, List)
@@ -82,6 +85,9 @@ class Variables:
         self._current_nesting: CurrentListNesting = CurrentListNesting.LEVEL_1
         self.next_table_context: TableContext = TableContext()
 
+    def __repr__(self):
+        return f"Variables({self.current_run=}, {self._current_nesting=}, {self.next_table_context=}, {self.current_lists=})"
+
     def get_current_list(self) -> List | None:
         if len(self.current_lists) == 0:
             return None
@@ -102,7 +108,10 @@ class Variables:
         self._current_nesting = self._current_nesting.get_next()
 
     def remove_nesting(self) -> None:
-        # TODO This may need to check LEVEL_1 and not go lower?
+        if self._current_nesting == CurrentListNesting.LEVEL_1:
+            # Don't go lower than the lowest nesting
+            return
+
         self._current_nesting = self._current_nesting.get_previous()
 
     def add_list(

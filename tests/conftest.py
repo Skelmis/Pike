@@ -20,7 +20,11 @@ def test_dir() -> Path:
     if Path("tests").exists():
         return Path("tests").absolute()
 
-    return Path(".").absolute()
+    current = Path(".").absolute()
+    if current.name == "example_report":
+        return current.parent
+
+    return current
 
 
 @pytest.fixture

@@ -5,8 +5,6 @@ class ListT(TypedDict):
     level_1: str
     level_2: str
     level_3: str
-    level_4: str
-    level_5: str
 
 
 class StylesT(TypedDict):
@@ -51,3 +49,5 @@ class ConfigT(TypedDict):
     """The resultant files to generate"""
     use_sandbox: bool
     """Whether or not to use a sandboxed Jinja2 environment"""
+    docx_create_list_styles: bool
+    """Should Pike create default list styles?"""

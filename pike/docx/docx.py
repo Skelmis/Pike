@@ -21,8 +21,14 @@ if t.TYPE_CHECKING:
 class Docx:
     def __init__(self, engine: Engine) -> None:
         self.engine: Engine = engine
+        self.enable_default_lists: bool = engine.config["docx_create_list_styles"]
 
-    def create_document(self, *, content: str, filename: str) -> Path:
+    def create_document(
+        self,
+        *,
+        content: str,
+        filename: str,
+    ) -> Path:
         """Given the combined markdown file, go turn it into a docx file.
 
         Parameters
@@ -44,6 +50,9 @@ class Docx:
             if self.engine.config["docx_template"] != ""
             else Document()
         )
+        if self.enable_default_lists:
+            template_file.configure_styles_for_numbered_lists()
+
         self.walk_ast(template_file=template_file, ast=ast)
         template_file.save(filename)
         return Path(filename).absolute()
@@ -152,6 +161,10 @@ class Docx:
                             style: str = self.engine.config["styles"]["bullet_lists"][
                                 f"level_{nesting_level}"  # noqa
                             ]
+                        elif self.enable_default_ordered_lists:
+                            style: str = "List Number"
+                            if nesting_level != 1:
+                                style += f" {nesting_level}"
                         else:
                             style: str = self.engine.config["styles"]["ordered_lists"][
                                 f"level_{nesting_level}"  # noqa
