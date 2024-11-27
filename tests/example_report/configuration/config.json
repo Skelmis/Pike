@@ -1,0 +1,29 @@
+{
+  "layout_file": "layout.md",
+  "docx_template": "",
+  "output_document_name": "{{title}}",
+  "output_directory": "documents",
+  "styles": {
+    "text": "",
+    "bullet_lists": {
+      "level_1": "List Paragraph",
+      "level_2": "List Paragraph 2",
+      "level_3": "List Paragraph 3",
+      "level_4": "List Paragraph 4",
+      "level_5": "List Paragraph 5"
+    },
+    "ordered_lists": {
+      "level_1": "List Paragraph",
+      "level_2": "List Paragraph 2",
+      "level_3": "List Paragraph 3",
+      "level_4": "List Paragraph 4",
+      "level_5": "List Paragraph 5"
+    }
+  },
+  "output_files": {
+    "markdown": true,
+    "docx": true,
+    "pdf": true
+  },
+  "use_sandbox": true
+}

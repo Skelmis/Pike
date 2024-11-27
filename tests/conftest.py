@@ -7,17 +7,17 @@ from pike import Engine
 
 @pytest.fixture
 def example_report_dir() -> Path:
-    if Path("example_report").exists():
-        path = Path("example_report").absolute()
+    if Path("tests").exists():
+        path = Path("tests/example_report").absolute()
     else:
-        path = Path("../example_report").absolute()
+        path = Path("example_report").absolute()
 
     return path
 
 
 @pytest.fixture
 def test_dir() -> Path:
-    if Path("example_report").exists():
+    if Path("tests").exists():
         return Path("tests").absolute()
 
     return Path(".").absolute()
