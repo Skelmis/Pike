@@ -30,7 +30,7 @@ I think I'll use it to format all of my documents from now on.
 
 
 Line break:
-This is the first line.  
+This is the first line.
 And this is the second line. 
 
 Bold:
