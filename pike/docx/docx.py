@@ -269,7 +269,7 @@ class Docx:
                     pass
                 case "hr":
                     # Insert a horizontal line
-                    template_file.add_paragraph().insert_horizontal_rule()
+                    template_file.add_paragraph().draw_paragraph_border(top=True)
 
             # Next token time!
             current_token_index += 1
