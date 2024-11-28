@@ -1,6 +1,7 @@
 from unittest.mock import Mock, call
 
 from docx import Document
+from docx.text.run import Run
 
 from pike import Engine, File, utils
 from pike.docx import Docx
@@ -112,4 +113,33 @@ def test_ordered_list_nested_restarting(engine: Engine, data_dir) -> None:
         call.add_paragraph().add_run("Indented item"),
         call.add_paragraph(style="List Paragraph"),
         call.add_paragraph().add_run("Fourth item"),
+    ]
+
+
+def test_inline_code(engine: Engine, data_dir) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "inline_code.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(),
+        call.add_paragraph().add_run(style="Subtle Reference"),
+        call.add_paragraph().add_run().add_text("code"),
+    ]
+
+
+def test_horizontal_rule(engine: Engine, data_dir) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "horizontal_rule.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(),
+        call.add_paragraph().insert_horizontal_rule(),
+        call.add_paragraph(),
+        call.add_paragraph().insert_horizontal_rule(),
+        call.add_paragraph(),
+        call.add_paragraph().insert_horizontal_rule(),
     ]

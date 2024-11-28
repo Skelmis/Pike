@@ -5,6 +5,7 @@
   "output_directory": "documents",
   "styles": {
     "text": "",
+    "inline_code": "Subtle Reference",
     "bullet_lists": {
       "level_1": "List Bullet",
       "level_2": "List Bullet 2",

@@ -23,6 +23,8 @@ Heading level 1
 Heading level 2
 ---------------
 
+
+
 Paragraphs:
 I really like using Markdown.
 
@@ -128,14 +130,23 @@ At the command prompt, type `nano`.
 
 
 Escaped code:
-``Use `code` in your Markdown file.``
+Pike does not support the following syntax example:
+\`\`Use \`code\` in your Markdown file.\`\`
+
+If you wish to use backticks without making inline code blocks, use a backslash. `\`
 
 
 Horizontal rules:
 
+One type:
+
 ---
 
+Second type:
+
 ***
+
+Third type:
 
 ___
 

@@ -14,6 +14,8 @@ class StylesT(TypedDict):
     """The style to apply for ordered lists"""
     bullet_lists: ListT
     """The style to apply for bullet (unordered) lists"""
+    inline_code: str
+    """The text to use for inline code blocks"""
 
 
 class OutputDocumentsT(TypedDict):
