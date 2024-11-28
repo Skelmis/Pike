@@ -123,6 +123,8 @@ class Docx:
         # as they get handled within other cases
         ignorable_tags: set[str] = {"link_close", "heading_close"}
 
+        list_order_requires_restart: bool = False
+
         current_token_index: int = 0
         if variables is None:
             variables = Variables()
@@ -173,6 +175,13 @@ class Docx:
                             ]
 
                         current_paragraph = template_file.add_paragraph(style=style)
+                        if (
+                            list_order_requires_restart
+                            and current_list.list_type != "bullet"
+                        ):
+                            # It's a new ordered list so requires restart
+                            current_paragraph.restart_numbering()
+                            list_order_requires_restart = False
                 case "paragraph_close":
                     # Reset the current paragraph to null
                     current_paragraph = None
@@ -203,6 +212,12 @@ class Docx:
                     variables.remove_nesting()
                     variables.remove_current_list()
                 case "ordered_list_open":
+                    if not variables.current_lists:
+                        # If we are opening a new top level
+                        # ordered list we need to reset the ordering
+                        # such that it works as it should for numbers
+                        list_order_requires_restart = True
+
                     variables.add_nesting()
                     variables.add_list("ordered")
                 case "ordered_list_close":

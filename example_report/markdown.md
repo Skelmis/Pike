@@ -81,6 +81,7 @@ Ordered lists:
 3. Third item
 4. Fourth item 
 
+Different markdown, same list result:
 1. First item
 1. Second item
 1. Third item
@@ -93,11 +94,13 @@ Unordered lists:
 - Third item
 - Fourth item 
 
+Different markdown, same list result:
 * First item
 * Second item
 * Third item
 * Fourth item 
 
+Different markdown, same list result:
 + First item
 + Second item
 + Third item

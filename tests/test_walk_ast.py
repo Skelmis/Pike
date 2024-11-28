@@ -45,3 +45,71 @@ def test_paragraphs(engine: Engine, data_dir) -> None:
             "I think I'll use it to format all of my documents from now on."
         ),
     ]
+
+
+def test_multiple_ordered_lists(engine: Engine, data_dir) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "ordered_lists.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().restart_numbering(),
+        call.add_paragraph().add_run("First item"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().add_run("Second item"),
+        call.add_paragraph(),
+        call.add_paragraph().add_run("Next list:"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().restart_numbering(),
+        call.add_paragraph().add_run("First item"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().add_run("Second item"),
+    ]
+
+
+def test_ordered_list_nested_restarting(engine: Engine, data_dir) -> None:
+    """Odd edge case, restarted the first two ordered lists fine but not nested"""
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "multi_ordered_list.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(),
+        call.add_paragraph().add_run("Ordered lists:"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().restart_numbering(),
+        call.add_paragraph().add_run("First item"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().add_run("Second item"),
+        call.add_paragraph(),
+        call.add_paragraph().add_run("Different markdown, same list result:"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().restart_numbering(),
+        call.add_paragraph().add_run("First item"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().add_run("Second item"),
+        call.add_paragraph(),
+        call.add_paragraph().add_run("Unordered lists:"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().add_run("First item"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().add_run("Second item"),
+        call.add_paragraph(),
+        call.add_paragraph().add_run("Nested lists:"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().restart_numbering(),
+        call.add_paragraph().add_run("First item"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().add_run("Second item"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().add_run("Third item"),
+        call.add_paragraph(style="List Paragraph 2"),
+        call.add_paragraph().add_run("Indented item"),
+        call.add_paragraph(style="List Paragraph 2"),
+        call.add_paragraph().add_run("Indented item"),
+        call.add_paragraph(style="List Paragraph"),
+        call.add_paragraph().add_run("Fourth item"),
+    ]
