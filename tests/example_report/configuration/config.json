@@ -1,7 +1,6 @@
 {
   "layout_file": "layout.md",
   "docx_template": "",
-  "docx_create_list_styles": false,
   "output_document_name": "{{title}}",
   "output_directory": "documents",
   "styles": {
@@ -16,6 +15,9 @@
       "level_2": "List Paragraph 2",
       "level_3": "List Paragraph 3"
     }
+  },
+    "docx_create_styles": {
+    "ordered_lists": false
   },
   "output_files": {
     "markdown": true,

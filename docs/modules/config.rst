@@ -23,6 +23,10 @@ The following are nested bits of the config:
   :members:
   :undoc-members:
 
+.. autoclass:: CreationTypesT
+  :members:
+  :undoc-members:
+
 .. autoclass:: ListT
   :members:
   :undoc-members:

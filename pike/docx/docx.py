@@ -21,7 +21,9 @@ if t.TYPE_CHECKING:
 class Docx:
     def __init__(self, engine: Engine) -> None:
         self.engine: Engine = engine
-        self.enable_default_lists: bool = engine.config["docx_create_list_styles"]
+        self.enable_ordered_lists: bool = engine.config["docx_create_styles"][
+            "ordered_lists"
+        ]
 
     def create_document(
         self,
@@ -50,7 +52,7 @@ class Docx:
             if self.engine.config["docx_template"] != ""
             else Document()
         )
-        if self.enable_default_lists:
+        if self.enable_ordered_lists:
             template_file.configure_styles_for_numbered_lists()
 
         self.walk_ast(template_file=template_file, ast=ast)
@@ -161,7 +163,7 @@ class Docx:
                             style: str = self.engine.config["styles"]["bullet_lists"][
                                 f"level_{nesting_level}"  # noqa
                             ]
-                        elif self.enable_default_ordered_lists:
+                        elif self.enable_ordered_lists:
                             style: str = "List Number"
                             if nesting_level != 1:
                                 style += f" {nesting_level}"

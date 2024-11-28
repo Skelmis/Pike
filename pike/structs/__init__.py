@@ -1,4 +1,10 @@
-from pike.structs.config import ConfigT, StylesT, OutputDocumentsT, ListT
+from pike.structs.config import (
+    ConfigT,
+    StylesT,
+    OutputDocumentsT,
+    ListT,
+    CreationTypesT,
+)
 from pike.structs.table import Table, Cell, Row, Entry, TextAlignment
 
 __all__ = (
@@ -11,4 +17,5 @@ __all__ = (
     "Row",
     "Entry",
     "TextAlignment",
+    "CreationTypesT",
 )

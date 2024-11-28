@@ -1,21 +1,23 @@
 {
   "layout_file": "layout.md",
   "docx_template": "",
-  "docx_create_list_styles": false,
   "output_document_name": "{{title}}",
   "output_directory": "documents",
   "styles": {
     "text": "",
     "bullet_lists": {
-      "level_1": "List Paragraph",
-      "level_2": "List Paragraph 2",
-      "level_3": "List Paragraph 3"
+      "level_1": "List Bullet",
+      "level_2": "List Bullet 2",
+      "level_3": "List Bullet 3"
     },
     "ordered_lists": {
       "level_1": "List Paragraph",
       "level_2": "List Paragraph 2",
       "level_3": "List Paragraph 3"
     }
+  },
+  "docx_create_styles": {
+    "ordered_lists": false
   },
   "output_files": {
     "markdown": true,

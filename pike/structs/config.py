@@ -28,6 +28,13 @@ class OutputDocumentsT(TypedDict):
     """Output a pdf document"""
 
 
+class CreationTypesT(TypedDict):
+    """Word styles to create"""
+
+    ordered_lists: bool
+    """Should Pike create and use a default ordered list"""
+
+
 class ConfigT(TypedDict):
     layout_file: str | None
     """The file to use as a template
@@ -49,5 +56,5 @@ class ConfigT(TypedDict):
     """The resultant files to generate"""
     use_sandbox: bool
     """Whether or not to use a sandboxed Jinja2 environment"""
-    docx_create_list_styles: bool
-    """Should Pike create default list styles?"""
+    docx_create_styles: CreationTypesT
+    """Should Pike create default styles?"""
