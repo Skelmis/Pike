@@ -187,3 +187,84 @@ Linked images: (TODO)
 
 Escaped characters:
 \* Without the backslash, this would be a bullet in an unordered list.
+
+---
+
+Extended syntax
+Comes from here: https://www.markdownguide.org/extended-syntax/
+
+Tables:
+| Syntax      | Description |
+| ----------- | ----------- |
+| Header      | Title       |
+| Paragraph   | Text        |
+
+Table alignment: (left, middle, right)
+| Syntax      | Description | Test Text     |
+| :---        |    :----:   |          ---: |
+| Header      | Title       | Here's this   |
+| Paragraph   | Text        | And more      |
+
+Table formatting:
+| Syntax      | Description |
+| ----------- | ----------- |
+| *Header*    | \`Title\` TODO Fix code inline once implemented     |
+| **Paragraph**   | Text        |
+
+
+Code: (no syntax highlighting)
+```
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "age": 25
+}
+```
+
+
+Footnotes:
+Here's a simple footnote,[^1] and here's a longer one.[^bignote]
+
+[^1]: This is the first footnote.
+
+[^bignote]: Here's one with multiple paragraphs and code.
+
+    Indent paragraphs to include them in the footnote.
+
+    \`{ my code }\` TODO Fix this code block once implemented
+
+    Add as many paragraphs as you like.
+
+
+Heading IDs:
+### My Great Heading { #custom-id }
+
+Definition lists: (not supported)
+
+First Term
+: This is the definition of the first term.
+
+Second Term
+: This is one definition of the second term.
+: This is another definition of the second term.
+
+
+Strikethrough:
+~~The world is flat.~~ We now know that the world is round.
+
+
+Task lists:
+- [x] Write the press release
+- [ ] Update the website
+- [ ] Contact the media
+
+
+Highlighting:
+I need to highlight these ==very important words==.
+
+
+Subscript:
+H~2~O (Should have 2 sub-scripted)
+
+Superscript:
+X^2^ (Should have 2 super-scripted)
