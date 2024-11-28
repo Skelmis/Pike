@@ -137,9 +137,9 @@ def test_horizontal_rule(engine: Engine, data_dir) -> None:
     docx.walk_ast(document, ast)
     assert document.mock_calls == [
         call.add_paragraph(),
-        call.add_paragraph().insert_horizontal_rule(),
+        call.add_paragraph().draw_paragraph_border(top=True),
         call.add_paragraph(),
-        call.add_paragraph().insert_horizontal_rule(),
+        call.add_paragraph().draw_paragraph_border(top=True),
         call.add_paragraph(),
-        call.add_paragraph().insert_horizontal_rule(),
+        call.add_paragraph().draw_paragraph_border(top=True),
     ]
