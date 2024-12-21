@@ -8,6 +8,7 @@ class TestingEnum(EnumBase):
     TWO = 2
     THREE = 3
 
+
 def test_get_next():
     te_1 = TestingEnum.ONE
     assert te_1.get_next() == TestingEnum.TWO
@@ -18,6 +19,7 @@ def test_get_next():
     te_3 = TestingEnum.THREE
     with pytest.raises(ValueError):
         te_3.get_next()
+
 
 def test_get_previous():
     te_1 = TestingEnum.ONE

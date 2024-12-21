@@ -265,8 +265,12 @@ class Docx:
                     # TODO Insert an actual code block
                     pass
                 case "link_open":
-                    # TODO Insert a link
-                    pass
+                    # Insert a link
+                    href = current_token.attrs["href"]
+                    text = ast[current_token_index + 1].content
+                    current_paragraph.add_external_hyperlink(href, text)
+                    # Skip the 'text' and 'link_close' block
+                    current_token_index += 2
                 case "hr":
                     # Insert a horizontal line
                     template_file.add_paragraph().draw_paragraph_border(top=True)

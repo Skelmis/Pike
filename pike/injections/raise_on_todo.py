@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 def raise_on_todo(engine: Engine) -> None:
-    """Logs warnings for all found TODO's in a given file""" # noqa
+    """Logs warnings for all found TODO's in a given file"""  # noqa
     for file in engine.files:
         for line in file.content.splitlines():
             todo_pos = line.lower().find("todo")

@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import Mock, call
 
 from docx import Document
@@ -142,4 +143,32 @@ def test_horizontal_rule(engine: Engine, data_dir) -> None:
         call.add_paragraph().draw_paragraph_border(top=True),
         call.add_paragraph(),
         call.add_paragraph().draw_paragraph_border(top=True),
+    ]
+
+
+def test_quick_links(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "quick_link.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(),
+        call.add_paragraph().add_external_hyperlink(
+            "https://google.com", "https://google.com"
+        ),
+    ]
+
+
+def test_normal_links(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "normal_link.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(),
+        call.add_paragraph().add_external_hyperlink(
+            "https://google.com", "Google"
+        ),
     ]
