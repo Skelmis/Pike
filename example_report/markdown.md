@@ -178,7 +178,7 @@ Ref:
 
 
 Images:
-![My cat!](/images/cat.jpg "Its my cat")
+![My cat!](images/cat.jpg "Its my cat")
 
 
 Linked images: (TODO)

@@ -1,0 +1,1 @@
+<img src="cat.jpg" width="2" height="2" alt="My cat" title="Caption">

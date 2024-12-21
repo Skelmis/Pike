@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest.mock import Mock, call
 
+import pytest
 from docx import Document
 from docx.text.run import Run
 
@@ -168,7 +169,44 @@ def test_normal_links(engine: Engine, data_dir: Path) -> None:
     docx.walk_ast(document, ast)
     assert document.mock_calls == [
         call.add_paragraph(),
-        call.add_paragraph().add_external_hyperlink(
-            "https://google.com", "Google"
-        ),
+        call.add_paragraph().add_external_hyperlink("https://google.com", "Google"),
     ]
+
+
+def test_titled_link(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "titled_link.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(),
+        call.add_paragraph().add_external_hyperlink("https://google.com", "Google"),
+    ]
+
+
+def test_image(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "image.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(),
+        call.add_picture("/images/cat.jpg", width=None, height=None),
+    ]
+
+
+@pytest.mark.xfail(
+    reason="Until we implement caption and alt text this isnt finished",
+    strict=True,
+)
+def test_image_with_sizes(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "sized_image.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [call.add_picture("cat.jpg", width=2, height=2)]
+    # TODO Finish this
+    raise ValueError("unfinished")
