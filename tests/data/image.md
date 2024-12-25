@@ -1,0 +1,1 @@
+![My cat!](/images/cat.jpg "Its my cat")

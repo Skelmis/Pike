@@ -19,4 +19,6 @@ implement
 page
 breaks
 
+{{ files.jinja.content }}
+
 {{ files.markdown.content }}

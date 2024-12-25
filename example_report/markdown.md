@@ -155,7 +155,7 @@ Links:
 My favorite search engine is [Duck Duck Go](https://duckduckgo.com).
 
 
-Titled links:
+Titled links: (Not supported at this time)
 My favorite search engine is [Duck Duck Go](https://duckduckgo.com "The best search engine for privacy").
 
 
@@ -178,7 +178,7 @@ Ref:
 
 
 Images:
-![My cat!](/images/cat.jpg "Its my cat")
+![My cat!](images/cat.jpg "Its my cat")
 
 
 Linked images: (TODO)
