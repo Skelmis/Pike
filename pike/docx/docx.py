@@ -10,6 +10,7 @@ from docx import Document
 from docx.enum.text import WD_COLOR_INDEX
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.shared import Cm
 from docx.text.paragraph import Paragraph
 from docx.text.run import Run
 from markdown_it.token import Token
@@ -83,8 +84,8 @@ class Docx:
         image_src: str,
         *,
         template_file: Document,
-        width=None,
-        height=None,
+        width: Cm | None = None,
+        height: Cm | None = None,
         title: str = None,
         alt_text: str = None,
     ):
@@ -268,7 +269,7 @@ class Docx:
                     content = heading_content.children[0].content
                     template_file.add_heading(content, level)
 
-                case "html_block":
+                case "html_block" | "html_inline":
                     # Figure out the type of HTML we have
                     # This is kind of jank.
                     #
@@ -286,9 +287,13 @@ class Docx:
                                 case "src":
                                     src = value
                                 case "width":
-                                    width = float(value.removeprefix("'").removeprefix('"'))
+                                    width = float(
+                                        value.removeprefix("'").removeprefix('"')
+                                    )
                                 case "height":
-                                    height = float(value.removeprefix("'").removeprefix('"'))
+                                    height = float(
+                                        value.removeprefix("'").removeprefix('"')
+                                    )
                                 case "alt":
                                     alt = value
                                 case "title":
@@ -300,8 +305,8 @@ class Docx:
                         self.add_image(
                             src,
                             template_file=template_file,
-                            width=width,
-                            height=height,
+                            width=Cm(width),
+                            height=Cm(height),
                             title=title,
                             alt_text=alt,
                         )

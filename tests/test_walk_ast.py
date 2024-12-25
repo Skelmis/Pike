@@ -5,7 +5,7 @@ import pytest
 from docx import Document
 from docx.text.run import Run
 
-from pike import Engine, File, utils
+from pike import Engine, File, utils, jinja_globals
 from pike.docx import Docx
 
 
@@ -210,3 +210,38 @@ def test_image_with_sizes(engine: Engine, data_dir: Path) -> None:
     assert document.mock_calls == [call.add_picture("cat.jpg", width=2, height=2)]
     # TODO Finish this
     raise ValueError("unfinished")
+
+
+def test_image_via_jinja_inline_insert_image(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    img_str = jinja_globals.insert_image(
+        "images/cat.jpg",
+        width=1,
+        height=2,
+    )
+    ast = markdown.parse(f"Hello{img_str}")
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(),
+        call.add_paragraph().add_run("Hello"),
+        call.add_picture("images/cat.jpg", width=360000, height=720000),
+    ]
+
+
+def test_image_via_jinja_block_insert_image(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse(
+        jinja_globals.insert_image(
+            "images/cat.jpg",
+            width=1,
+            height=2,
+        )
+    )
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_picture("images/cat.jpg", width=360000, height=720000)
+    ]

@@ -27,7 +27,31 @@ def comment(file: File, comment_value: str) -> None:
         file.file,
     )
 
-def insert_image(image_src: str, *, alt_text: str=None, width:float=None, height:float=None, caption: str=None) -> str:
+
+def insert_image(
+    image_src: str,
+    *,
+    alt_text: str = None,
+    width: float = None,
+    height: float = None,
+    caption: str = None,
+) -> str:
+    """
+
+    Parameters
+    ----------
+    image_src
+    alt_text
+    width: float
+        Width in centimeters
+    height: float
+        Height in centimeters
+    caption
+
+    Returns
+    -------
+
+    """
     data = StringIO()
 
     data.write(f"<img src='{image_src}'")
