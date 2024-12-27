@@ -245,3 +245,22 @@ def test_image_via_jinja_block_insert_image(engine: Engine, data_dir: Path) -> N
     assert document.mock_calls == [
         call.add_picture("images/cat.jpg", width=360000, height=720000)
     ]
+
+
+def test_bold_title(engine: Engine, data_dir: Path) -> None:
+    # This is kind of a fake test? At time of writing I couldn't
+    # figure out how to mock down to attributes being set so
+    # this was manually tested and then we just assume if
+    # the mock calls are made then this is #fine
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "bold_title.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_heading(level=1),
+        call.add_heading().add_run(""),
+        call.add_heading().add_run("Bold"),
+        call.add_heading().add_run(" nothing "),
+        call.add_heading().add_run("italic"),
+    ]

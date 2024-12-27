@@ -16,7 +16,7 @@ from docx.text.run import Run
 from markdown_it.token import Token
 
 from pike import utils
-from pike.docx import Variables, List
+from pike.docx import Variables, List, check_has_next, get_up_to_token
 
 if t.TYPE_CHECKING:
     from pike import Engine
@@ -68,15 +68,6 @@ class Docx:
         self.walk_ast(template_file=template_file, ast=ast)
         template_file.save(filename)
         return Path(filename).absolute()
-
-    @classmethod
-    def check_has_next(cls, ast: list[Token], next_idx: int) -> bool:
-        try:
-            ast[next_idx]
-        except IndexError:
-            return False
-        else:
-            return True
 
     @classmethod
     def add_image(
@@ -152,7 +143,9 @@ class Docx:
         """
         # The following tags can be safely ignored
         # as they get handled within other cases
-        ignorable_tags: set[str] = {"link_close", "heading_close"}
+        ignorable_tags: set[str] = {
+            "link_close",
+        }
 
         list_order_requires_restart: bool = False
 
@@ -160,7 +153,7 @@ class Docx:
         if variables is None:
             variables = Variables()
 
-        while self.check_has_next(ast, current_token_index):
+        while check_has_next(ast, current_token_index):
             current_token: Token = ast[current_token_index]
 
             match current_token.type:
@@ -216,6 +209,8 @@ class Docx:
                 case "paragraph_close":
                     # Reset the current paragraph to null
                     current_paragraph = None
+                case "heading_close":
+                    current_paragraph = None
                 case "softbreak":
                     # This represents a newline
                     assert current_paragraph is not None  # nosec B101
@@ -255,19 +250,8 @@ class Docx:
                     variables.remove_nesting()
                     variables.remove_current_list()
                 case "heading_open":
-                    # Add 2 so we skip heading stuff
-                    heading_content: Token = ast[current_token_index + 1]
-                    closing_token: Token = ast[current_token_index + 2]
-                    current_token_index += 2
-                    if closing_token.type != "heading_close":
-                        # Not to sure what would cause this but its worth checking
-                        raise ValueError(
-                            "Something went wrong attempting to add a heading"
-                        )
-
                     level = int(current_token.tag[-1])
-                    content = heading_content.children[0].content
-                    template_file.add_heading(content, level)
+                    current_paragraph = template_file.add_heading(level=level)
 
                 case "html_block" | "html_inline":
                     # Figure out the type of HTML we have

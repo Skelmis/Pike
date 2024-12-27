@@ -3,6 +3,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal
 
+from markdown_it.token import Token
+
 
 class EnumBase(Enum):
     def get_next(self) -> EnumBase:
