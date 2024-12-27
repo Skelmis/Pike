@@ -22,6 +22,10 @@ Pike should be fast. Ideally there shouldn't be enough downtime to do something 
 
 This will be archived by never touching Latex, and instead using word as an intermediary. This also provides more freedom to end users when they wish to create new templates.
 
+As of writing, the current average unix runtime for the example report on my machine is:
+- DOCX Output: Half a second
+- PDF Output: 1.5-6 seconds
+
 *grumbles about existing solutions taking enough time to make a coffee*
 
 
