@@ -4,29 +4,61 @@ from typing import Final, Any
 
 from pydantic import BaseModel
 
-MARKER: Final[str] = '807e2383866d289f54e35bb8b2f2918c'
+MARKER: Final[str] = "807e2383866d289f54e35bb8b2f2918c"
+
 
 class Command(BaseModel):
     command: str
     arguments: list[str]
+    keyword_arguments: dict[str, str]
+
+
+def _b64_encode(content: str) -> str:
+    """Helper method for b64 stuff"""
+    return b64encode(content.encode("utf-8")).decode("utf-8")
+
+
+def _b64_decode(content: str) -> str:
+    """Helper method for b64 stuff"""
+    return b64decode(content, validate=True).decode("utf-8")
+
 
 def parse_command_string(command: str) -> Command:
-    if not command.startswith(f"<{MARKER}") and not command.endswith(">"):
+    if (
+        not command.startswith(f"<{MARKER}")
+        or not command.endswith(">")
+        or "ARGS" not in command
+        or "KWARGS" not in command
+    ):
         raise ValueError(f"Malformed command format: {command}")
 
-    parsed_args:list[str] = []
+    parsed_args: list[str] = []
+    parsed_kwargs: dict[str, str] = {}
     command = command.removeprefix(f"<{MARKER} ").removesuffix(">")
-    try:
-        command, args = command.split(" ", maxsplit=1)
-        for arg in args.split(" "):
-            parsed_args.append(b64decode(arg, validate=True).decode())
-    except ValueError:
-        # No arguments provided so no further action needed
-        pass
+    command, args = command.split(" ARGS ", maxsplit=1)
+    args, kwargs = args.split("KWARGS", maxsplit=1)
+    # args = args.split(" ") if " " in args else [args] if args else []
+    for arg in args.lstrip().rstrip().split(" "):
+        if not arg:
+            continue
 
-    return Command(command=command, arguments=parsed_args)
+        parsed_args.append(_b64_decode(arg))
 
-def create_command_string(command_name: str, *args: Any) -> str:
+    for item in kwargs.rstrip().lstrip().split(" "):
+        if not item:
+            continue
+
+        key, value = item.split("|", maxsplit=1)
+        parsed_kwargs[key] = _b64_decode(value)
+
+    return Command(
+        command=command,
+        arguments=parsed_args,
+        keyword_arguments=parsed_kwargs,
+    )
+
+
+def create_command_string(command_name: str, *args: Any, **kwargs: Any) -> str:
     """Format a custom command as expected by the Pike AST.
 
     Parameters
@@ -36,6 +68,8 @@ def create_command_string(command_name: str, *args: Any) -> str:
         This is how the AST knows where to pass the call to.
     args: list[str]
         A list of string arguments to pass to the command.
+    kwargs: dict[str, Any]
+        A dict of keyword arguments to pass to the command.
 
     Notes
     -----
@@ -48,11 +82,16 @@ def create_command_string(command_name: str, *args: Any) -> str:
         A formatted command string built using HTML blocks.
     """
     data = StringIO()
-    data.write(f"<{MARKER} {command_name}")
+    data.write(f"<{MARKER} {command_name} ARGS")
     for argument in args:
         if not isinstance(argument, str):
             argument = str(argument)
 
-        data.write(f" {b64encode(argument.encode()).hex()}")
+        data.write(f" {_b64_encode(argument)}")
+
+    data.write(" KWARGS")
+    for key, value in kwargs.items():
+        data.write(f" {key}|{_b64_encode(value)}")
+
     data.write(">")
     return data.getvalue()
