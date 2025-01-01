@@ -13,6 +13,7 @@ Welcome to Pike's documentation!
    modules/usage.rst
    modules/design.rst
    modules/config.rst
+   modules/references/custom_commands.rst
 
 .. toctree::
    :maxdepth: 2
