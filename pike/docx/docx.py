@@ -34,7 +34,11 @@ class Docx:
         self.enable_ordered_lists: bool = engine.config["docx_create_styles"][
             "ordered_lists"
         ]
-        self.commands: dict[str, Callable[[...], [...]]] = {}
+        self.commands: dict[str, Callable[[...], ...] | Callable[[], ...]] = {
+            # A built-in NOP for commands and injections
+            # which need an out to avoid displaying None
+            "NOP": lambda: None,
+        }
         self.template_file: Document | None = None
 
     def import_commands_from_engine(self):

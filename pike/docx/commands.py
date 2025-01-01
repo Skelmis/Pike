@@ -68,7 +68,7 @@ def parse_command_string(command: str) -> Command:
 def create_command_string(
     command_name: str,
     *args: Any,
-    for_embedding_in_markdown: bool = False,
+    for_embedding_in_markdown: bool = True,
     **kwargs: Any,
 ) -> str:
     """Format a custom command as expected by the Pike AST.
@@ -83,7 +83,7 @@ def create_command_string(
     for_embedding_in_markdown: bool
         The AST parser requires two \n\n to pick up on HTML blocks.
 
-        If set to true (default false), then we add this.
+        This sets those.
     kwargs: dict[str, Any]
         A dict of keyword arguments to pass to the command.
 

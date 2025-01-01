@@ -2,14 +2,18 @@ from pike.docx import commands
 
 
 def test_create_command_str():
-    r_1 = commands.create_command_string("test")
+    r_1 = commands.create_command_string("test", for_embedding_in_markdown=False)
     assert r_1 == f"<{commands.MARKER} test ARGS KWARGS>"
 
     r_2 = commands.create_command_string("test", "arg")
-    assert r_2 == f"<{commands.MARKER} test ARGS {commands._b64_encode('arg')} KWARGS>"
+    assert (
+        r_2 == f"<{commands.MARKER} test ARGS {commands._b64_encode('arg')} KWARGS>\n\n"
+    )
 
     r_3 = commands.create_command_string("test", 1)
-    assert r_3 == f"<{commands.MARKER} test ARGS {commands._b64_encode('1')} KWARGS>"
+    assert (
+        r_3 == f"<{commands.MARKER} test ARGS {commands._b64_encode('1')} KWARGS>\n\n"
+    )
 
 
 def test_parse_command_str():
