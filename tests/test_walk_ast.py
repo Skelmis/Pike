@@ -1,10 +1,11 @@
 from pathlib import Path
 from unittest.mock import Mock, call
 
+import pytest
 from docx import Document
 from docx.text.run import Run
 
-from pike import Engine, File, utils
+from pike import Engine, File, utils, jinja_globals
 from pike.docx import Docx
 
 
@@ -168,7 +169,98 @@ def test_normal_links(engine: Engine, data_dir: Path) -> None:
     docx.walk_ast(document, ast)
     assert document.mock_calls == [
         call.add_paragraph(),
-        call.add_paragraph().add_external_hyperlink(
-            "https://google.com", "Google"
-        ),
+        call.add_paragraph().add_external_hyperlink("https://google.com", "Google"),
+    ]
+
+
+def test_titled_link(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "titled_link.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(),
+        call.add_paragraph().add_external_hyperlink("https://google.com", "Google"),
+    ]
+
+
+def test_image(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "image.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(),
+        call.add_picture("/images/cat.jpg", width=None, height=None),
+    ]
+
+
+@pytest.mark.xfail(
+    reason="Until we implement caption and alt text this isnt finished",
+    strict=True,
+)
+def test_image_with_sizes(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "sized_image.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [call.add_picture("cat.jpg", width=2, height=2)]
+    # TODO Finish this
+    raise ValueError("unfinished")
+
+
+def test_image_via_jinja_inline_insert_image(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    img_str = jinja_globals.insert_image(
+        "images/cat.jpg",
+        width=1,
+        height=2,
+    )
+    ast = markdown.parse(f"Hello{img_str}")
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_paragraph(),
+        call.add_paragraph().add_run("Hello"),
+        call.add_picture("images/cat.jpg", width=360000, height=720000),
+    ]
+
+
+def test_image_via_jinja_block_insert_image(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse(
+        jinja_globals.insert_image(
+            "images/cat.jpg",
+            width=1,
+            height=2,
+        )
+    )
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_picture("images/cat.jpg", width=360000, height=720000)
+    ]
+
+
+def test_bold_title(engine: Engine, data_dir: Path) -> None:
+    # This is kind of a fake test? At time of writing I couldn't
+    # figure out how to mock down to attributes being set so
+    # this was manually tested and then we just assume if
+    # the mock calls are made then this is #fine
+    docx = Docx(engine)
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "bold_title.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [
+        call.add_heading(level=1),
+        call.add_heading().add_run(""),
+        call.add_heading().add_run("Bold"),
+        call.add_heading().add_run(" nothing "),
+        call.add_heading().add_run("italic"),
     ]

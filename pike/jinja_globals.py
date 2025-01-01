@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 import typing
+from io import StringIO
+from pathlib import Path
 
 if typing.TYPE_CHECKING:
     from pike import Engine, File
@@ -24,3 +26,42 @@ def comment(file: File, comment_value: str) -> None:
         comment_value,
         file.file,
     )
+
+
+def insert_image(
+    image_src: str,
+    *,
+    alt_text: str = None,
+    width: float = None,
+    height: float = None,
+    caption: str = None,
+) -> str:
+    """
+
+    Parameters
+    ----------
+    image_src
+    alt_text
+    width: float
+        Width in centimeters
+    height: float
+        Height in centimeters
+    caption
+
+    Returns
+    -------
+
+    """
+    data = StringIO()
+
+    data.write(f"<img src='{image_src}'")
+    if alt_text:
+        data.write(f" alt='{alt_text}'")
+    if width:
+        data.write(f" width='{width}'")
+    if height:
+        data.write(f" height='{height}'")
+    if caption:
+        data.write(f" title='{caption}'")
+    data.write(">")
+    return data.getvalue()

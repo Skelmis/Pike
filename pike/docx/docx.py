@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import typing as t
 from pathlib import Path
 from unittest.mock import Mock
@@ -9,17 +10,22 @@ from docx import Document
 from docx.enum.text import WD_COLOR_INDEX
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.shared import Cm
 from docx.text.paragraph import Paragraph
 from docx.text.run import Run
 from markdown_it.token import Token
 
 from pike import utils
-from pike.docx import Variables, List
+from pike.docx import Variables, List, check_has_next, get_up_to_token
 
 if t.TYPE_CHECKING:
     from pike import Engine
 
     from docx.document import Document
+
+html_attribute_pattern: re.Pattern = re.compile(
+    r"(\S+)=[\"']?((?:.(?![\"']?\s+\S+=|\s*/?[>\"']))+.)[\"']?"
+)
 
 
 class Docx:
@@ -64,13 +70,18 @@ class Docx:
         return Path(filename).absolute()
 
     @classmethod
-    def check_has_next(cls, ast: list[Token], next_idx: int) -> bool:
-        try:
-            ast[next_idx]
-        except IndexError:
-            return False
-        else:
-            return True
+    def add_image(
+        cls,
+        image_src: str,
+        *,
+        template_file: Document,
+        width: Cm | None = None,
+        height: Cm | None = None,
+        title: str = None,
+        alt_text: str = None,
+    ):
+        # TODO Implement title and alt text
+        template_file.add_picture(image_src, width=width, height=height)
 
     @classmethod
     def add_text(
@@ -132,7 +143,9 @@ class Docx:
         """
         # The following tags can be safely ignored
         # as they get handled within other cases
-        ignorable_tags: set[str] = {"link_close", "heading_close"}
+        ignorable_tags: set[str] = {
+            "link_close",
+        }
 
         list_order_requires_restart: bool = False
 
@@ -140,7 +153,7 @@ class Docx:
         if variables is None:
             variables = Variables()
 
-        while self.check_has_next(ast, current_token_index):
+        while check_has_next(ast, current_token_index):
             current_token: Token = ast[current_token_index]
 
             match current_token.type:
@@ -196,6 +209,8 @@ class Docx:
                 case "paragraph_close":
                     # Reset the current paragraph to null
                     current_paragraph = None
+                case "heading_close":
+                    current_paragraph = None
                 case "softbreak":
                     # This represents a newline
                     assert current_paragraph is not None  # nosec B101
@@ -235,22 +250,72 @@ class Docx:
                     variables.remove_nesting()
                     variables.remove_current_list()
                 case "heading_open":
-                    # Add 2 so we skip heading stuff
-                    heading_content: Token = ast[current_token_index + 1]
-                    closing_token: Token = ast[current_token_index + 2]
-                    current_token_index += 2
-                    if closing_token.type != "heading_close":
-                        # Not to sure what would cause this but its worth checking
-                        raise ValueError(
-                            "Something went wrong attempting to add a heading"
+                    level = int(current_token.tag[-1])
+                    current_paragraph = template_file.add_heading(level=level)
+
+                case "html_block" | "html_inline":
+                    # Figure out the type of HTML we have
+                    # This is kind of jank.
+                    #
+                    # Ref: https://spec.commonmark.org/0.25/#html-blocks
+                    if current_token.content.startswith("<img"):
+                        # Lets regex for an image
+                        matches = html_attribute_pattern.findall(current_token.content)
+                        src = None
+                        width = None
+                        height = None
+                        alt = None
+                        title = None
+                        for title, value in matches:
+                            match title:
+                                case "src":
+                                    src = value
+                                case "width":
+                                    width = float(
+                                        value.removeprefix("'").removeprefix('"')
+                                    )
+                                case "height":
+                                    height = float(
+                                        value.removeprefix("'").removeprefix('"')
+                                    )
+                                case "alt":
+                                    alt = value
+                                case "title":
+                                    title = value
+
+                        if src is None:
+                            raise ValueError("Image 'src' is required.")
+
+                        self.add_image(
+                            src,
+                            template_file=template_file,
+                            width=Cm(width),
+                            height=Cm(height),
+                            title=title,
+                            alt_text=alt,
                         )
 
-                    level = int(current_token.tag[-1])
-                    content = heading_content.children[0].content
-                    template_file.add_heading(content, level)
+                    else:
+                        # Fall back to text
+                        self.add_text(
+                            current_token.content,
+                            paragraph=current_paragraph,
+                            document=template_file,
+                            variables=variables,
+                        )
+
                 case "image":
-                    # TODO Insert an image
-                    pass
+                    # Insert an image
+                    alt_text = current_token.content
+                    img_src = current_token.attrs["src"]
+                    caption = current_token.attrs.get("title", None)
+                    self.add_image(
+                        img_src,
+                        template_file=template_file,
+                        title=caption,
+                        alt_text=alt_text,
+                    )
+
                 case "code_inline":
                     run = current_paragraph.add_run(
                         style=self.engine.config["styles"]["inline_code"]
@@ -261,11 +326,14 @@ class Docx:
                         document=template_file,
                         variables=variables,
                     )
+
                 case "fence":
                     # TODO Insert an actual code block
                     pass
                 case "link_open":
                     # Insert a link
+                    # Once I know how to make word like this, use it
+                    # title = current_token.attrs.get("title")
                     href = current_token.attrs["href"]
                     text = ast[current_token_index + 1].content
                     current_paragraph.add_external_hyperlink(href, text)
