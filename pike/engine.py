@@ -4,7 +4,7 @@ import shutil
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Self
 
 import jinja2
 from docx import utility
@@ -12,7 +12,7 @@ from jinja2 import Environment
 from jinja2.sandbox import SandboxedEnvironment
 
 from pike import File, checks, utils, structs, injections
-from pike.docx import Docx
+from pike.docx import Docx, commands
 from pike import jinja_globals as jg
 
 
@@ -24,6 +24,7 @@ class Engine:
         *,
         configuration: structs.ConfigT,
         load_default_plugins: bool = True,
+        load_default_custom_commands: bool = True,
         global_variables: dict[str, Any] = None,
     ) -> None:
         self.base_directory: Path = base_directory
@@ -37,11 +38,13 @@ class Engine:
         self._file_plugins: dict[
             str, Callable[[File], Any] | Callable[[File, ...], Any]
         ] = {}
+        self._jinja_custom_commands: dict[str, Callable[[...], ...]] = {}
+        self._custom_commands_to_add: list[tuple[str, Callable[[...], ...], bool]] = []
         self._file_variables: dict[str, dict[str, Any]] = {}
         self._folder_variables: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
 
         if self.config["use_sandbox"]:
-            self.jinja_env: SandboxedEnvironment = SandboxedEnvironment(
+            self.jinja_env: SandboxedEnvironment | Environment = SandboxedEnvironment(
                 lstrip_blocks=True,
                 undefined=jinja2.StrictUndefined,
             )
@@ -53,6 +56,44 @@ class Engine:
 
         if load_default_plugins:
             self.load_default_injections()
+
+        if load_default_custom_commands:
+            self.load_default_custom_commands()
+
+    def add_custom_command(
+        self,
+        command_name: str,
+        command_callable: Callable[[...], ...],
+        *,
+        provide_docx_instance: bool = False,
+    ) -> Self:
+        """Load a custom command into the Engine.
+
+        This method will load a custom command into the Docx AST
+        as well as exposing the command via Jinja to templates.
+
+        Parameters
+        ----------
+        command_name: str
+            The name of the command to call
+        command_callable
+            The relevant function to call.
+        provide_docx_instance: bool
+            If True (defaults to False), the docx instance will be
+            provided as the first positional argument.
+
+        Returns
+        -------
+        Engine
+            The current Engine instance for method chaining.
+        """
+        self._custom_commands_to_add.append(
+            (command_name, command_callable, provide_docx_instance)
+        )
+        self._jinja_custom_commands[command_name] = partial(
+            commands.create_command_string, command_name, for_embedding_in_markdown=True
+        )
+        return self
 
     @classmethod
     def load_from_directory(
@@ -89,6 +130,18 @@ class Engine:
     def load_default_injections(self) -> None:
         """Loads a bunch of default, useful plugins"""
         self.register_plugin(injections.raise_on_todo)
+
+    def load_default_custom_commands(self) -> None:
+        """Loads a bunch of default custom commands.
+
+        Currently, these are:
+        - add_page_break
+        """
+        self.add_custom_command(
+            "add_page_break",
+            commands.insert_page_break,
+            provide_docx_instance=True,
+        )
 
     def register_plugin(self, plugin: Callable[[Engine], None]) -> Engine:
         """Register a given callable as a plugin.
@@ -154,11 +207,13 @@ class Engine:
         return self
 
     def inject_variables(self, content: str, variables: dict[str, Any]) -> str:
+        global_vars = {
+            **self._jinja_custom_commands,
+            "get_folder": partial(jg.get_folder, self),
+        }
         template = self.jinja_env.from_string(
             content,
-            globals={
-                "get_folder": partial(jg.get_folder, self),
-            },
+            globals=global_vars,
         )
         return template.render(**variables)
 
@@ -191,6 +246,8 @@ class Engine:
 
         if self.config["output_files"]["docx"] or self.config["output_files"]["pdf"]:
             docx = Docx(self)
+            docx.import_commands_from_engine()
+
             docx_file = docx.create_document(
                 content=self._layout_file.content,
                 filename=f"{output_document_name}.docx",

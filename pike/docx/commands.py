@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+import typing
 from base64 import b64decode, b64encode
 from io import StringIO
 from typing import Final, Any
 
 from pydantic import BaseModel
 
-MARKER: Final[str] = "807e2383866d289f54e35bb8b2f2918c"
+if typing.TYPE_CHECKING:
+    from pike.docx import Docx
+
+MARKER: Final[str] = "MARK-807e2383866d289f54e35bb8b2f2918c"
 
 
 class Command(BaseModel):
@@ -24,6 +30,7 @@ def _b64_decode(content: str) -> str:
 
 
 def parse_command_string(command: str) -> Command:
+    command = command.strip()
     if (
         not command.startswith(f"<{MARKER}")
         or not command.endswith(">")
@@ -58,7 +65,12 @@ def parse_command_string(command: str) -> Command:
     )
 
 
-def create_command_string(command_name: str, *args: Any, **kwargs: Any) -> str:
+def create_command_string(
+    command_name: str,
+    *args: Any,
+    for_embedding_in_markdown: bool = False,
+    **kwargs: Any,
+) -> str:
     """Format a custom command as expected by the Pike AST.
 
     Parameters
@@ -68,6 +80,10 @@ def create_command_string(command_name: str, *args: Any, **kwargs: Any) -> str:
         This is how the AST knows where to pass the call to.
     args: list[str]
         A list of string arguments to pass to the command.
+    for_embedding_in_markdown: bool
+        The AST parser requires two \n\n to pick up on HTML blocks.
+
+        If set to true (default false), then we add this.
     kwargs: dict[str, Any]
         A dict of keyword arguments to pass to the command.
 
@@ -94,4 +110,13 @@ def create_command_string(command_name: str, *args: Any, **kwargs: Any) -> str:
         data.write(f" {key}|{_b64_encode(value)}")
 
     data.write(">")
+
+    if for_embedding_in_markdown:
+        data.write("\n\n")
+
     return data.getvalue()
+
+
+def insert_page_break(docx: Docx):
+    """A custom command to add a page break to the document."""
+    docx.template_file.add_page_break()
