@@ -5,6 +5,8 @@ import typing
 from io import StringIO
 from pathlib import Path
 
+from pike.docx import commands
+
 if typing.TYPE_CHECKING:
     from pike import Engine, File
 
@@ -19,13 +21,14 @@ def get_folder(engine: Engine, section_name: str) -> list[dict[str, typing.Any]]
     return list(sorted(data, key=lambda file: file.get("id"), reverse=False))
 
 
-def comment(file: File, comment_value: str) -> None:
+def comment(file: File, comment_value: str) -> str:
     """Raise a comment for review"""
     log.warning(
         "Comment: '%s'\n\tFile: %s",
         comment_value,
         file.file,
     )
+    return commands.create_command_string("NOP", for_embedding_in_markdown=True)
 
 
 def insert_image(

@@ -6,19 +6,7 @@
 
 Thanks for coming!
 
-Forcing
-content
-down
-onto 
-the
-next
-page
-till
-I
-implement
-page
-breaks
-
+{{add_page_break()}}
 {{ files.jinja.content }}
 
 {{ files.markdown.content }}

@@ -264,3 +264,13 @@ def test_bold_title(engine: Engine, data_dir: Path) -> None:
         call.add_heading().add_run(" nothing "),
         call.add_heading().add_run("italic"),
     ]
+
+
+def test_custom_command(engine: Engine, data_dir: Path) -> None:
+    docx = Docx(engine)
+    docx.import_commands_from_engine()
+    markdown = utils.create_markdown_it()
+    ast = markdown.parse((data_dir / "custom_command.md").read_text())
+    document = Mock()
+    docx.walk_ast(document, ast)
+    assert document.mock_calls == [call.add_page_break()]

@@ -3,20 +3,20 @@ from __future__ import annotations
 import os
 import re
 import typing as t
+from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 from unittest.mock import Mock
 
 from docx import Document
 from docx.enum.text import WD_COLOR_INDEX
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
 from docx.shared import Cm
 from docx.text.paragraph import Paragraph
 from docx.text.run import Run
 from markdown_it.token import Token
 
 from pike import utils
-from pike.docx import Variables, List, check_has_next, get_up_to_token
+from pike.docx import Variables, List, check_has_next, commands
 
 if t.TYPE_CHECKING:
     from pike import Engine
@@ -34,6 +34,50 @@ class Docx:
         self.enable_ordered_lists: bool = engine.config["docx_create_styles"][
             "ordered_lists"
         ]
+        self.commands: dict[str, Callable[[...], ...] | Callable[[], ...]] = {
+            # A built-in NOP for commands and injections
+            # which need an out to avoid displaying None
+            "NOP": lambda: None,
+        }
+        self.template_file: Document | None = None
+
+    def import_commands_from_engine(self):
+        for command in self.engine._custom_commands_to_add:
+            self.load_custom_command(
+                command[0],
+                command[1],
+                provide_docx_instance=command[2],
+            )
+
+    def load_custom_command(
+        self,
+        command_name: str,
+        command_callable,
+        *,
+        provide_docx_instance: bool = False,
+    ) -> t.Self:
+        """Load a custom command into the Docx instance.
+
+        Parameters
+        ----------
+        command_name: str
+            The name of the command to call
+        command_callable
+            The relevant function to call.
+        provide_docx_instance: bool
+            If True (defaults to False), the docx instance will be
+            provided as the first positional argument.
+
+        Returns
+        -------
+        Docx
+            The current instance to allow for method chaining.
+        """
+        if provide_docx_instance:
+            command_callable = partial(command_callable, self)
+
+        self.commands[command_name] = command_callable
+        return self
 
     def create_document(
         self,
@@ -57,16 +101,16 @@ class Docx:
         """
         markdown = utils.create_markdown_it()
         ast = markdown.parse(content)
-        template_file = (
+        self.template_file = (
             Document(self.engine.config["docx_template"])
             if self.engine.config["docx_template"] != ""
             else Document()
         )
         if self.enable_ordered_lists:
-            template_file.configure_styles_for_numbered_lists()
+            self.template_file.configure_styles_for_numbered_lists()
 
-        self.walk_ast(template_file=template_file, ast=ast)
-        template_file.save(filename)
+        self.walk_ast(template_file=self.template_file, ast=ast)
+        self.template_file.save(filename)
         return Path(filename).absolute()
 
     @classmethod
@@ -141,6 +185,13 @@ class Docx:
             The current paragraph we are writing to
 
         """
+        if self.template_file is None:
+            # Ensure custom commands have access to
+            # this if we have managed to get into a
+            # situation where it isnt already set.
+            # I.E. Low level usage
+            self.template_file = template_file
+
         # The following tags can be safely ignored
         # as they get handled within other cases
         ignorable_tags: set[str] = {
@@ -293,6 +344,20 @@ class Docx:
                             height=Cm(height),
                             title=title,
                             alt_text=alt,
+                        )
+
+                    elif current_token.content.startswith(f"<{commands.MARKER}"):
+                        command: commands.Command = commands.parse_command_string(
+                            current_token.content
+                        )
+                        command_callable = self.commands.get(command.command)
+                        if command_callable is None:
+                            raise ValueError(
+                                f"Attempted to use an unknown custom command: {command.command}"
+                            )
+
+                        command_callable(
+                            *command.arguments, **command.keyword_arguments
                         )
 
                     else:
