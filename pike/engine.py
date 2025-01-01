@@ -91,7 +91,9 @@ class Engine:
             (command_name, command_callable, provide_docx_instance)
         )
         self._jinja_custom_commands[command_name] = partial(
-            commands.create_command_string, command_name, for_embedding_in_markdown=True
+            commands.create_command_string,
+            command_name,
+            for_embedding_in_markdown=True,
         )
         return self
 
