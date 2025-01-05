@@ -102,14 +102,22 @@ Pike provides a way to latch onto the runtime loop and run arbitrary Python
 code in the context of the running report. This is useful for implementing
 things such as helpful logging messages or enforcing xyz.
 
-These are called injections, for example use cases please refer to the folder ``pike.injections``.
+These are called **injections**, for example use cases please refer to the folder ``pike.injections``.
 
-Exposing Python code within Jinja
-*********************************
+Python code available within Jinja
+***********************************
 
 Sometimes instead of simply emitting some form of log message you may to expose
 custom functionality within the Jinja template itself. This can be achieved
-through Pike's plugin system and is demonstrated below.
+one of two ways depending on what you want access to within your Python code.
+
+Plugins - Access to a File object
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you would like to have access to the :py:object:`~pike.File` object,
+then you'll need need to write a **plugin**. An example of this is
+demonstrated below:
+
 
 .. code-block:: python
 
@@ -159,6 +167,50 @@ called ``get_referenced_files`` which can be used like so:
   {% for reference in references -%}
   This file is referenced by **{{ reference.id }}**
   {% endfor -%}
+
+Commands - Access to the Docx renderer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you would instead like access to the :py:object:`~pike.docx.Docx` class
+and the ability to do custom Docx formatting, then you need to implement a custom command.
+
+An example of this can be seen below:
+
+.. code-block:: python
+
+  def insert_page_break(docx: Docx):
+      """A custom command to add a page break to the document."""
+      docx.template_file.add_page_break()
+
+  def main():
+      engine = Engine.load_from_directory(Path("."))
+      engine.add_custom_command(
+        "add_page_break",
+        insert_page_break,
+        provide_docx_instance=True,
+      )
+      engine.run()
+
+
+  if __name__ == "__main__":
+      main()
+
+While running this report, all files will now contain a command called
+called ``add_page_break`` which adds a page break at that location.
+
+.. code-block:: markdown
+
+  ---
+  id: two
+  value: three
+  ---
+  ## Title {{ this.id }}
+
+  Content for file {{ this.id }}
+
+  {{add_page_break()}}
+
+You can read more about this in `Custom Commands`_.
 
 Jinja tips
 ==========
