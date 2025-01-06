@@ -205,10 +205,10 @@ Table alignment: (left, middle, right)
 | Left      | Middle      | Right     | Regular |
 
 Table formatting:
-| Syntax      | Description |
+| Formatting      | Here |
 | ----------- | ----------- |
-| *Header*    | \`Title\` TODO Fix code inline once implemented     |
-| **Paragraph**   | Text        |
+| *Italic*    | `Inline` |
+| **Bold**   | Nothing        |
 
 
 Code: (no syntax highlighting)
