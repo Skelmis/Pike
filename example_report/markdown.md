@@ -200,10 +200,9 @@ Tables:
 | Paragraph   | Text        |
 
 Table alignment: (left, middle, right)
-| Syntax      | Description | Test Text     |
-| :---        |    :----:   |          ---: |
-| Header      | Title       | Here's this   |
-| Paragraph   | Text        | And more      |
+| Aligned   | Description | Test Text |
+| :---      |    :----:   |      ---: |
+| Left      | Middle      | Right     |
 
 Table formatting:
 | Syntax      | Description |

@@ -339,6 +339,7 @@ class Docx:
                         end_token_type="table_close",
                         current_idx=current_token_index,
                     )
+                    current_token_index += len(table_ast)
                     table_model = structs.Table.from_ast(table_ast)
                     docx_table = template_file.add_table(
                         rows=len(table_model.rows),
