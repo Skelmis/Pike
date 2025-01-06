@@ -15,13 +15,21 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, RGBColor
 from docx.styles.style import ParagraphStyle
+from docx.table import _Cell
 from docx.text.paragraph import Paragraph
 from docx.text.parfmt import ParagraphFormat
 from docx.text.run import Run
 from markdown_it.token import Token
 
-from pike import utils
-from pike.docx import Variables, List, check_has_next, commands
+from pike import utils, structs
+from pike.docx import (
+    Variables,
+    List,
+    check_has_next,
+    commands,
+    get_up_to_token,
+    CurrentRun,
+)
 
 if t.TYPE_CHECKING:
     from pike import Engine
@@ -141,7 +149,7 @@ class Docx:
         content: str,
         *,
         document: Document,
-        variables: Variables,
+        current_run: CurrentRun,
         paragraph: Paragraph | Run = None,
     ) -> Run:
         if paragraph is None:
@@ -161,12 +169,12 @@ class Docx:
             run: Run = paragraph.add_run(content)
 
         # Add the styles
-        run.bold = variables.current_run.bold
-        run.italic = variables.current_run.italic
-        run.underline = variables.current_run.underline
+        run.bold = current_run.bold
+        run.italic = current_run.italic
+        run.underline = current_run.underline
 
         # TODO support custom colors here via config?
-        if variables.current_run.highlighted:
+        if current_run.highlighted:
             run.font.highlight_color = WD_COLOR_INDEX.YELLOW
 
         return run
@@ -322,13 +330,36 @@ class Docx:
                         current_token.content,
                         paragraph=current_paragraph,
                         document=template_file,
-                        variables=variables,
+                        current_run=variables.current_run,
                     )
                 case "table_open":
-                    # This denotes a markdown table
-                    # TODO Walk ahead, grab the entire table AST
-                    #      and pass it off to a method for handling
-                    pass
+                    # This denotes a Markdown table
+                    table_ast = get_up_to_token(
+                        ast,
+                        end_token_type="table_close",
+                        current_idx=current_token_index,
+                    )
+                    table_model = structs.Table.from_ast(table_ast)
+                    docx_table = template_file.add_table(
+                        rows=len(table_model.rows),
+                        cols=len(table_model.rows[0].cells),
+                        style=self.engine.config["styles"]["table"],
+                    )
+                    for row_idx, row in enumerate(docx_table.rows):
+                        for cell_idx, cell in enumerate(row.cells):
+                            cell = t.cast(_Cell, cell)
+                            current_cell_paragraph = cell.paragraphs[0]
+                            cell_model: structs.Cell = table_model.rows[row_idx].cells[
+                                cell_idx
+                            ]
+                            for entry in cell_model.content:
+                                self.add_text(
+                                    entry.text,
+                                    current_run=entry.style,
+                                    document=template_file,
+                                    paragraph=current_cell_paragraph.add_run(),
+                                )
+
                 case "bullet_list_open":
                     # Handle a new bulleted list
                     # In theory every 'new' list should be at
@@ -416,7 +447,7 @@ class Docx:
                             current_token.content,
                             paragraph=current_paragraph,
                             document=template_file,
-                            variables=variables,
+                            current_run=variables.current_run,
                         )
 
                 case "image":
@@ -439,7 +470,7 @@ class Docx:
                         current_token.content,
                         paragraph=run,
                         document=template_file,
-                        variables=variables,
+                        current_run=variables.current_run,
                     )
 
                 case "fence":

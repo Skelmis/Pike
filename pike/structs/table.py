@@ -3,9 +3,9 @@ from __future__ import annotations
 import csv
 from enum import Enum
 from pathlib import Path
-from typing import NamedTuple
 
 from markdown_it.token import Token
+from pydantic import BaseModel
 
 from pike import utils
 from pike.docx import CurrentRun, TableContext
@@ -19,7 +19,7 @@ class TextAlignment(Enum):
     RIGHT = 3
 
 
-class Entry(NamedTuple):
+class Entry(BaseModel):
     """A piece of text within a cell"""
 
     text: str
@@ -27,8 +27,11 @@ class Entry(NamedTuple):
     style: CurrentRun
     """How to style it"""
 
+    class Config:
+        arbitrary_types_allowed = True
 
-class Cell(NamedTuple):
+
+class Cell(BaseModel):
     # Stupid nesting to support
     # multiple styles in content
     """A cell, composed of various text pieces"""
@@ -36,7 +39,7 @@ class Cell(NamedTuple):
     """Said text pieces"""
 
 
-class Row(NamedTuple):
+class Row(BaseModel):
     """The cells within a given row"""
 
     cells: list[Cell]
@@ -52,7 +55,9 @@ class Table:
         column_widths: list[float] = None,
         text_alignment: list[TextAlignment] = None,
     ):
-        """
+        """Handles basic tables.
+
+        If you want merged cells, etc. Make a custom command.
 
         Parameters
         ----------
@@ -104,12 +109,12 @@ class Table:
                         # Toss the empties, they shouldn't
                         # matter to end docx anyway
                         current_row_entries.append(
-                            Entry(token.content, style=current_run)
+                            Entry(text=token.content, style=current_run)
                         )
                         # So they don't clutter each other
                         current_run = CurrentRun()
 
-        return Cell(current_row_entries)
+        return Cell(content=current_row_entries)
 
     @classmethod
     def from_csv_file(
@@ -187,19 +192,19 @@ class Table:
                     current_style.italic = False
                 case "text":
                     current_row_entries.append(
-                        Entry(token.content, style=current_style)
+                        Entry(text=token.content, style=current_style)
                     )
                 case "tr_close":
                     # We've finished a row
-                    rows.append(Row(current_cells))
+                    rows.append(Row(cells=current_cells))
                     current_cells = []
                 case "th_close":
                     # Finished a cell in the header row
-                    current_cells.append(Cell(current_row_entries))
+                    current_cells.append(Cell(content=current_row_entries))
                     current_row_entries = []
                 case "td_close":
                     # Finished a data cell
-                    current_cells.append(Cell(current_row_entries))
+                    current_cells.append(Cell(content=current_row_entries))
                     current_row_entries = []
 
         return cls(
