@@ -9,9 +9,14 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from docx import Document
-from docx.enum.text import WD_COLOR_INDEX
-from docx.shared import Cm
+from docx.enum.style import WD_STYLE_TYPE
+from docx.enum.text import WD_COLOR_INDEX, WD_PARAGRAPH_ALIGNMENT
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Cm, RGBColor
+from docx.styles.style import ParagraphStyle
 from docx.text.paragraph import Paragraph
+from docx.text.parfmt import ParagraphFormat
 from docx.text.run import Run
 from markdown_it.token import Token
 
@@ -33,6 +38,9 @@ class Docx:
         self.engine: Engine = engine
         self.enable_ordered_lists: bool = engine.config["docx_create_styles"][
             "ordered_lists"
+        ]
+        self.enable_code_blocks: bool = engine.config["docx_create_styles"][
+            "code_block"
         ]
         self.commands: dict[str, Callable[[...], ...] | Callable[[], ...]] = {
             # A built-in NOP for commands and injections
@@ -162,6 +170,48 @@ class Docx:
             run.font.highlight_color = WD_COLOR_INDEX.YELLOW
 
         return run
+
+    def _configure_for_codeblocks(self):
+        self.engine.config["styles"]["code_block"] = "Code_Block"
+
+        if "Code_Block" in self.template_file.styles:
+            # No need to duplicate
+            return
+
+        document = self.template_file
+        style: ParagraphStyle = document.styles.add_style(
+            "Code_Block", WD_STYLE_TYPE.PARAGRAPH
+        )
+        style.base_style = document.styles["Normal"]
+
+        s_format: ParagraphFormat = style.paragraph_format
+        s_format.left_indent = Cm(0.25)
+        s_format.right_indent = Cm(0.25)
+        # s_format.space_before = Cm(0.5)
+        # s_format.space_after = Cm(0.5)
+        s_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+        s_font = style.font
+        # s_font.name = "Consolas"
+        s_font.name = "DejaVu Sans Mono"
+        # s_font.bold = True
+        s_font.color.rgb = RGBColor(0, 0, 0)
+
+    def insert_codeblock(self, text: str) -> None:
+        # TODO Support highlighting, bold, italic n such
+        if self.enable_code_blocks:
+            self._configure_for_codeblocks()
+
+        p = self.template_file.add_paragraph(
+            text,
+            style=self.engine.config["styles"]["code_block"],
+        )
+        if self.enable_code_blocks:
+            shd = OxmlElement("w:shd")
+            shd.set(qn("w:val"), "clear")
+            shd.set(qn("w:color"), "auto")
+            shd.set(qn("w:fill"), "ECEBDE")
+            p.paragraph_format.element.get_or_add_pPr()
+            p.paragraph_format.element.pPr.append(shd)
 
     def walk_ast(
         self: Docx,
@@ -393,8 +443,7 @@ class Docx:
                     )
 
                 case "fence":
-                    # TODO Insert an actual code block
-                    pass
+                    self.insert_codeblock(current_token.content.rstrip())
                 case "link_open":
                     # Insert a link
                     # Once I know how to make word like this, use it

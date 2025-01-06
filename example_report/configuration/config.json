@@ -6,6 +6,7 @@
   "styles": {
     "text": "",
     "inline_code": "Subtle Reference",
+    "code_block": "",
     "bullet_lists": {
       "level_1": "List Bullet",
       "level_2": "List Bullet 2",
@@ -18,7 +19,8 @@
     }
   },
     "docx_create_styles": {
-    "ordered_lists": true
+    "ordered_lists": true,
+    "code_block": true
   },
   "output_files": {
     "markdown": true,

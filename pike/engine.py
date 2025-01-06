@@ -4,7 +4,7 @@ import shutil
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Self
+from typing import Any, Callable
 
 import jinja2
 from docx import utility
@@ -66,7 +66,7 @@ class Engine:
         command_callable: Callable[[...], ...],
         *,
         provide_docx_instance: bool = False,
-    ) -> Self:
+    ) -> Docx:
         """Load a custom command into the Engine.
 
         This method will load a custom command into the Docx AST
