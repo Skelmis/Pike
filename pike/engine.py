@@ -66,7 +66,7 @@ class Engine:
         command_callable: Callable[[...], ...],
         *,
         provide_docx_instance: bool = False,
-    ) -> Docx:
+    ) -> Engine:
         """Load a custom command into the Engine.
 
         This method will load a custom command into the Docx AST

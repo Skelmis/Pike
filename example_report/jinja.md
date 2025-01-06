@@ -14,3 +14,10 @@ Include an image using an easier syntax:
 
 Insert a page break in the current location:
 {{add_page_break()}}
+
+Custom commands also work in tables:
+| Header      |
+| ----------- |
+| insert_text("Hi")      |
+
+{{comment("Blocked until #5 is implemented")}}

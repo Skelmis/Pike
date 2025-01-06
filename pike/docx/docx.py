@@ -323,7 +323,10 @@ class Docx:
                     current_paragraph = None
                 case "softbreak":
                     # This represents a newline
-                    assert current_paragraph is not None  # nosec B101
+                    if current_paragraph is None:
+                        # Unsure why this is None here...
+                        current_paragraph = template_file.add_paragraph()
+
                     current_paragraph.add_run().add_break()
                 case "text":
                     # Add text to document with current styles

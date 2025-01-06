@@ -98,6 +98,9 @@ def create_command_string(
         A formatted command string built using HTML blocks.
     """
     data = StringIO()
+    if for_embedding_in_markdown:
+        data.write("\n")
+
     data.write(f"<{MARKER} {command_name} ARGS")
     for argument in args:
         if not isinstance(argument, str):

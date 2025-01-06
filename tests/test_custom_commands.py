@@ -7,12 +7,13 @@ def test_create_command_str():
 
     r_2 = commands.create_command_string("test", "arg")
     assert (
-        r_2 == f"<{commands.MARKER} test ARGS {commands._b64_encode('arg')} KWARGS>\n\n"
+        r_2
+        == f"\n<{commands.MARKER} test ARGS {commands._b64_encode('arg')} KWARGS>\n\n"
     )
 
     r_3 = commands.create_command_string("test", 1)
     assert (
-        r_3 == f"<{commands.MARKER} test ARGS {commands._b64_encode('1')} KWARGS>\n\n"
+        r_3 == f"\n<{commands.MARKER} test ARGS {commands._b64_encode('1')} KWARGS>\n\n"
     )
 
 
