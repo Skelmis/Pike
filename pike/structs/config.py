@@ -15,7 +15,9 @@ class StylesT(TypedDict):
     bullet_lists: ListT
     """The style to apply for bullet (unordered) lists"""
     inline_code: str
-    """The text to use for inline code blocks"""
+    """The style to use for inline code blocks"""
+    code_block: str
+    """The style to use for code blocks"""
 
 
 class OutputDocumentsT(TypedDict):
@@ -35,6 +37,8 @@ class CreationTypesT(TypedDict):
 
     ordered_lists: bool
     """Should Pike create and use a default ordered list"""
+    code_block: bool
+    """Should Pike create and use a default code block"""
 
 
 class ConfigT(TypedDict):
