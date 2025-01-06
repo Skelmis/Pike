@@ -200,9 +200,9 @@ Tables:
 | Paragraph   | Text        |
 
 Table alignment: (left, middle, right)
-| Aligned   | Description | Test Text |
-| :---      |    :----:   |      ---: |
-| Left      | Middle      | Right     |
+| Aligned   | Description | Test Text |Normal   |
+| :---      |    :----:   |      ---: | ---     |
+| Left      | Middle      | Right     | Regular |
 
 Table formatting:
 | Syntax      | Description |

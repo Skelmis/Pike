@@ -1,7 +1,7 @@
 from markdown_it import MarkdownIt
 
 from pike.docx import CurrentRun
-from pike.structs import Table, Entry, Cell
+from pike.structs import Table, Entry, Cell, TextAlignment
 
 
 def test_table_from_csv(data_dir):
@@ -39,3 +39,18 @@ def test_table_text_to_cell():
     assert cell.content[1].style == CurrentRun()
     assert cell.content[2].text == "italic"
     assert cell.content[2].style == CurrentRun(italic=True)
+
+
+def test_table_with_alignment(data_dir):
+    markdown = MarkdownIt().enable("table")
+    ast = markdown.parse((data_dir / "table_alignment.md").read_text())
+    table = Table.from_ast(ast)
+    assert len(table.rows) == 2
+    assert len(table.rows[0].cells) == 4
+    assert table.has_header_row is True
+
+    assert len(table.text_alignment) == 4
+    assert table.text_alignment[0] == TextAlignment.LEFT
+    assert table.text_alignment[1] == TextAlignment.CENTER
+    assert table.text_alignment[2] == TextAlignment.RIGHT
+    assert table.text_alignment[3] == TextAlignment.NONE

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
+from imaplib import Literal
 from pathlib import Path
 
 from markdown_it.token import Token
@@ -17,6 +18,7 @@ class TextAlignment(Enum):
     LEFT = 1
     CENTER = 2
     RIGHT = 3
+    NONE = 4
 
 
 class Entry(BaseModel):
@@ -170,15 +172,22 @@ class Table:
         current_row_entries: list[Entry] = []
         current_style: CurrentRun = CurrentRun()
         for token in utils.flatten_ast(tokens):
-            if token.type == "th_open" and token.attrs.get("style"):
-                # Get alignments
-                match token.attrs["style"]:
-                    case "text-align:right":
-                        text_alignment.append(TextAlignment.RIGHT)
-                    case "text-align:left":
-                        text_alignment.append(TextAlignment.LEFT)
-                    case "text-align:center":
-                        text_alignment.append(TextAlignment.CENTER)
+            if token.type == "th_open":
+                if token.attrs.get("style"):
+                    # Get alignments
+                    match token.attrs["style"]:
+                        case "text-align:right":
+                            text_alignment.append(TextAlignment.RIGHT)
+                        case "text-align:left":
+                            text_alignment.append(TextAlignment.LEFT)
+                        case "text-align:center":
+                            text_alignment.append(TextAlignment.CENTER)
+                        case _:
+                            raise ValueError("Expected a style")
+
+                else:
+                    # Let Docx decide
+                    text_alignment.append(TextAlignment.NONE)
 
             match token.type:
                 # TODO Support underline and highlighting

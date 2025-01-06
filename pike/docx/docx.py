@@ -10,6 +10,7 @@ from unittest.mock import Mock
 
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_COLOR_INDEX, WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -350,6 +351,25 @@ class Docx:
                         for cell_idx, cell in enumerate(row.cells):
                             cell = t.cast(_Cell, cell)
                             current_cell_paragraph = cell.paragraphs[0]
+
+                            if (
+                                table_model.text_alignment[cell_idx]
+                                != structs.TextAlignment.NONE
+                            ):
+                                match table_model.text_alignment[cell_idx]:
+                                    case structs.TextAlignment.LEFT:
+                                        current_cell_paragraph.paragraph_format.alignment = (
+                                            WD_TABLE_ALIGNMENT.LEFT
+                                        )
+                                    case structs.TextAlignment.CENTER:
+                                        current_cell_paragraph.paragraph_format.alignment = (
+                                            WD_TABLE_ALIGNMENT.CENTER
+                                        )
+                                    case structs.TextAlignment.RIGHT:
+                                        current_cell_paragraph.paragraph_format.alignment = (
+                                            WD_TABLE_ALIGNMENT.RIGHT
+                                        )
+
                             cell_model: structs.Cell = table_model.rows[row_idx].cells[
                                 cell_idx
                             ]
