@@ -40,6 +40,7 @@ def test_split_str_into_command_blocks():
     r_2 = commands.split_str_into_command_blocks(r_2_str)
     assert isinstance(r_2, list)
     assert isinstance(r_2[0], commands.Command)
+    assert len(r_2) == 1
 
     r_3 = (
         "<MARK-807e2383866d289f54e35bb8b2f2918c insert_text "
