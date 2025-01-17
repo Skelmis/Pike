@@ -205,9 +205,15 @@ class Table:
                 case "em_close":
                     current_style.italic = False
                 case "text":
-                    current_row_entries.append(
-                        Entry(text=token.content, style=current_style)
-                    )
+                    if token.content != "":
+                        # Saves empty rows with nothing in them
+                        #
+                        # This may break something, but until it
+                        # does this is the behaviour
+                        current_row_entries.append(
+                            Entry(text=token.content, style=current_style)
+                        )
+
                     current_style = CurrentRun()
                 case "tr_close":
                     # We've finished a row
@@ -221,6 +227,17 @@ class Table:
                     # Finished a data cell
                     current_cells.append(Cell(content=current_row_entries))
                     current_row_entries = []
+                case "code_inline":
+                    # A simple way to add formatting
+                    # when its not in CurrentRun
+                    current_row_entries.append(
+                        Entry(
+                            text=commands.create_command_string(
+                                "insert_text", token.content, inline=True
+                            ),
+                            style=current_style,
+                        )
+                    )
                 case "html_block" | "html_inline":
                     # See custom commands and turn them into blocks
                     if token.content.startswith(f"<{commands.MARKER}"):

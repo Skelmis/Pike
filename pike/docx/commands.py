@@ -103,6 +103,9 @@ def create_command_string(
 
     data.write(" KWARGS")
     for key, value in kwargs.items():
+        if not isinstance(value, str):
+            value = str(value)
+
         data.write(f" {key}|{_b64_encode(value)}")
 
     data.write(">")

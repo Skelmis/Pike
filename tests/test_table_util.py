@@ -57,7 +57,6 @@ def test_table_with_alignment(data_dir):
     assert table.text_alignment[3] == TextAlignment.NONE
 
 
-@pytest.mark.xfail()
 def test_table_formatting(data_dir):
     markdown = MarkdownIt().enable("table")
     ast = markdown.parse((data_dir / "table_formatting.md").read_text())
@@ -74,9 +73,13 @@ def test_table_formatting(data_dir):
     assert bold.content[0].text == "Bold"
     assert bold.content[0].style == CurrentRun(bold=True)
 
+    # This is a 'hack' to ensure formatting
+    # is applied on items that don't exist
+    # as a CurrentRun entry.
     inline = table.rows[1].cells[1]
-    assert inline.content[0].text == "Inline"
-    # TODO Test this
+    assert inline.content[0].text == commands.create_command_string(
+        "insert_text", "Inline", inline=True
+    )
 
     nothing = table.rows[2].cells[1]
     assert nothing.content[0].text == "Nothing"
