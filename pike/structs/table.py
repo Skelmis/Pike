@@ -210,6 +210,7 @@ class Table:
                         #
                         # This may break something, but until it
                         # does this is the behaviour
+
                         current_row_entries.append(
                             Entry(text=token.content, style=current_style)
                         )

@@ -63,7 +63,7 @@ class Engine:
     def add_custom_command(
         self,
         command_name: str,
-        command_callable: Callable[[...], ...],
+        command_callable: Callable[..., ...],
         *,
         provide_docx_instance: bool = False,
     ) -> Engine:
@@ -93,7 +93,6 @@ class Engine:
         self._jinja_custom_commands[command_name] = partial(
             commands.create_command_string,
             command_name,
-            for_embedding_in_markdown=True,
         )
         return self
 
@@ -138,10 +137,16 @@ class Engine:
 
         Currently, these are:
         - add_page_break
+        - insert_text
         """
         self.add_custom_command(
             "add_page_break",
             commands.insert_page_break,
+            provide_docx_instance=True,
+        )
+        self.add_custom_command(
+            "insert_text",
+            commands.insert_text,
             provide_docx_instance=True,
         )
 

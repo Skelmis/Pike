@@ -28,7 +28,7 @@ def comment(file: File, comment_value: str) -> str:
         comment_value,
         file.file,
     )
-    return commands.create_command_string("NOP", for_embedding_in_markdown=True)
+    return commands.create_command_string("NOP")
 
 
 def insert_image(

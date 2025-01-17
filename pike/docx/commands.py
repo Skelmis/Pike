@@ -5,7 +5,12 @@ from base64 import b64decode, b64encode
 from io import StringIO
 from typing import Final, Any
 
+import commons
+from docx.text.paragraph import Paragraph
+from docx.text.run import Run
 from pydantic import BaseModel
+
+from pike.docx import CurrentRun
 
 if typing.TYPE_CHECKING:
     from pike.docx import Docx
@@ -55,6 +60,7 @@ def parse_command_string(command: str) -> Command:
         if not item:
             continue
 
+        item = _b64_decode(item)
         key, value = item.split("|", maxsplit=1)
         parsed_kwargs[key] = _b64_decode(value)
 
@@ -106,13 +112,87 @@ def create_command_string(
         if not isinstance(value, str):
             value = str(value)
 
-        data.write(f" {key}|{_b64_encode(value)}")
+        entry = _b64_encode(f"{key}|{_b64_encode(value)}")
+        data.write(f" {entry}")
 
     data.write(">")
 
     return data.getvalue()
 
 
+def split_str_into_command_blocks(text: str) -> list[str | Command]:
+    """Given text, return commands + raw content
+
+    Parameters
+    ----------
+    text: str
+        The text which may or may not contain commands
+    """
+    # TODO Implement using re.split!
+    raise NotImplementedError()
+
+
 def insert_page_break(docx: Docx):
     """A custom command to add a page break to the document."""
     docx.template_file.add_page_break()
+
+
+def insert_text(
+    docx: Docx,
+    text: str,
+    *,
+    inline: bool = None,
+    bold: bool = None,
+    italic: bool = None,
+    highlight: bool = None,
+    underline: bool = None,
+):
+    """A custom command to add a text block to the document.
+
+    Parameters
+    ----------
+    docx: Docx
+        The docx instance
+    text: str
+        What to write.
+    inline: bool
+        Should this be a code inline?
+    bold: bool
+        Should this be bold text?
+    italic: bool
+        Should this be italic?
+    highlight: bool
+        Should this be highlighted?
+    underline: bool
+        Should this be underlined?
+    """
+    bold = commons.value_to_bool(bold)
+    inline = commons.value_to_bool(inline)
+    italic = commons.value_to_bool(italic)
+    highlight = commons.value_to_bool(highlight)
+    underline = commons.value_to_bool(underline)
+
+    current_run: CurrentRun = CurrentRun(
+        bold=bold, italic=italic, highlight=highlight, underline=underline
+    )
+    current_paragraph: Paragraph | Run | None = (
+        docx.current_paragraph
+        if docx.current_paragraph is not None
+        else docx.template_file.add_paragraph()
+    )
+
+    if inline is True:
+        # Inline code block
+        if isinstance(current_paragraph, Run):
+            current_paragraph.style = docx.engine.config["styles"]["inline_code"]
+        else:
+            current_paragraph = current_paragraph.add_run(
+                style=docx.engine.config["styles"]["inline_code"]
+            )
+
+    docx.add_text(
+        text,
+        paragraph=current_paragraph,
+        document=docx.template_file,
+        current_run=current_run,
+    )

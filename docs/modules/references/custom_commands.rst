@@ -53,3 +53,8 @@ An example of this in action may look like:
 .. autofunction:: create_command_string
 
 .. py:attribute:: MARKER
+
+.. autofunction:: insert_page_break
+
+.. autofunction:: insert_text
+

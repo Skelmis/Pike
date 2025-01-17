@@ -18,6 +18,6 @@ Insert a page break in the current location:
 Custom commands also work in tables:
 | Header      |
 | ----------- |
-| insert_text("Hi")      |
+| {{insert_text("Hi I am ")}} {{insert_text("italic + bold", bold=True, italic=True)}} {{insert_text("and")}} {{insert_text("inline", inline=True)}}      |
 
 {{comment("Blocked until #5 is implemented")}}

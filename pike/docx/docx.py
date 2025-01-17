@@ -56,7 +56,12 @@ class Docx:
             # which need an out to avoid displaying None
             "NOP": lambda: None,
         }
+
+        # These can be used by external things
+        # Check they are None first, but they do exist
+        # I'd like to refactor their usage but eh
         self.template_file: Document | None = None
+        self.current_paragraph: Paragraph | None = None
 
     def import_commands_from_engine(self):
         for command in self.engine._custom_commands_to_add:
@@ -290,7 +295,9 @@ class Docx:
                     # for usage with bullet points n such
                     current_list: List | None = variables.get_current_list()
                     if current_list is None:
-                        current_paragraph = template_file.add_paragraph()
+                        current_paragraph = self.current_paragraph = (
+                            template_file.add_paragraph()
+                        )
 
                     else:
                         # We need to deal with list nesting's
@@ -308,7 +315,9 @@ class Docx:
                                 f"level_{nesting_level}"  # noqa
                             ]
 
-                        current_paragraph = template_file.add_paragraph(style=style)
+                        current_paragraph = self.current_paragraph = (
+                            template_file.add_paragraph(style=style)
+                        )
                         if (
                             list_order_requires_restart
                             and current_list.list_type != "bullet"
@@ -318,14 +327,16 @@ class Docx:
                             list_order_requires_restart = False
                 case "paragraph_close":
                     # Reset the current paragraph to null
-                    current_paragraph = None
+                    current_paragraph = self.current_paragraph = None
                 case "heading_close":
-                    current_paragraph = None
+                    current_paragraph = self.current_paragraph = None
                 case "softbreak":
                     # This represents a newline
                     if current_paragraph is None:
                         # Unsure why this is None here...
-                        current_paragraph = template_file.add_paragraph()
+                        current_paragraph = self.current_paragraph = (
+                            template_file.add_paragraph()
+                        )
 
                     current_paragraph.add_run().add_break()
                 case "text":
@@ -377,11 +388,10 @@ class Docx:
                                 cell_idx
                             ]
                             for entry in cell_model.content:
+                                # TODO Refactor all of these checks to use split_str_into_command_blocks
                                 if entry.text.startswith(f"<{commands.MARKER}"):
                                     command: commands.Command = (
-                                        commands.parse_command_string(
-                                            current_token.content
-                                        )
+                                        commands.parse_command_string(entry.text)
                                     )
                                     command_callable = self.commands.get(
                                         command.command
@@ -391,9 +401,14 @@ class Docx:
                                             f"Attempted to use an unknown custom command: {command.command}"
                                         )
 
+                                    old_pg = self.current_paragraph
+                                    self.current_paragraph = (
+                                        current_cell_paragraph.add_run()
+                                    )
                                     command_callable(
                                         *command.arguments, **command.keyword_arguments
                                     )
+                                    self.current_paragraph = old_pg
                                 else:
                                     self.add_text(
                                         entry.text,
@@ -425,7 +440,9 @@ class Docx:
                     variables.remove_current_list()
                 case "heading_open":
                     level = int(current_token.tag[-1])
-                    current_paragraph = template_file.add_heading(level=level)
+                    current_paragraph = self.current_paragraph = (
+                        template_file.add_heading(level=level)
+                    )
 
                 case "html_block" | "html_inline":
                     # Figure out the type of HTML we have
