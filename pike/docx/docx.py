@@ -377,12 +377,30 @@ class Docx:
                                 cell_idx
                             ]
                             for entry in cell_model.content:
-                                self.add_text(
-                                    entry.text,
-                                    current_run=entry.style,
-                                    document=template_file,
-                                    paragraph=current_cell_paragraph.add_run(),
-                                )
+                                if entry.text.startswith(f"<{commands.MARKER}"):
+                                    command: commands.Command = (
+                                        commands.parse_command_string(
+                                            current_token.content
+                                        )
+                                    )
+                                    command_callable = self.commands.get(
+                                        command.command
+                                    )
+                                    if command_callable is None:
+                                        raise ValueError(
+                                            f"Attempted to use an unknown custom command: {command.command}"
+                                        )
+
+                                    command_callable(
+                                        *command.arguments, **command.keyword_arguments
+                                    )
+                                else:
+                                    self.add_text(
+                                        entry.text,
+                                        current_run=entry.style,
+                                        document=template_file,
+                                        paragraph=current_cell_paragraph.add_run(),
+                                    )
 
                 case "bullet_list_open":
                     # Handle a new bulleted list

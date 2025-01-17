@@ -9,7 +9,7 @@ from markdown_it.token import Token
 from pydantic import BaseModel
 
 from pike import utils
-from pike.docx import CurrentRun, TableContext
+from pike.docx import CurrentRun, TableContext, commands, check_has_next
 
 
 class TextAlignment(Enum):
@@ -168,10 +168,15 @@ class Table:
         text_alignment: list[TextAlignment] = []
 
         rows: list[Row] = []
+        current_token_index: int = 0
         current_cells: list[Cell] = []
         current_row_entries: list[Entry] = []
         current_style: CurrentRun = CurrentRun()
-        for token in utils.flatten_ast(tokens):
+        tokens = utils.flatten_ast(tokens)
+        while check_has_next(tokens, current_token_index):
+            token: Token = tokens[current_token_index]
+            current_token_index += 1
+
             if token.type == "th_open":
                 if token.attrs.get("style"):
                     # Get alignments
@@ -203,6 +208,7 @@ class Table:
                     current_row_entries.append(
                         Entry(text=token.content, style=current_style)
                     )
+                    current_style = CurrentRun()
                 case "tr_close":
                     # We've finished a row
                     rows.append(Row(cells=current_cells))
@@ -215,6 +221,22 @@ class Table:
                     # Finished a data cell
                     current_cells.append(Cell(content=current_row_entries))
                     current_row_entries = []
+                case "html_block" | "html_inline":
+                    # See custom commands and turn them into blocks
+                    if token.content.startswith(f"<{commands.MARKER}"):
+                        # On the rendered to parse for cmds
+                        current_row_entries.append(
+                            Entry(
+                                text=token.content,
+                                style=current_style,
+                            )
+                        )
+
+                    else:
+                        # TODO Support images? Maybe
+                        raise ValueError(
+                            "This HTML isn't supported in tables right now."
+                        )
 
         return cls(
             rows=rows,

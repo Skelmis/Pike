@@ -37,7 +37,7 @@ def parse_command_string(command: str) -> Command:
         or "ARGS" not in command
         or "KWARGS" not in command
     ):
-        raise ValueError(f"Malformed command format: {command}")
+        raise ValueError(f"Malformed command format: {repr(command)}")
 
     parsed_args: list[str] = []
     parsed_kwargs: dict[str, str] = {}
@@ -68,7 +68,6 @@ def parse_command_string(command: str) -> Command:
 def create_command_string(
     command_name: str,
     *args: Any,
-    for_embedding_in_markdown: bool = True,
     **kwargs: Any,
 ) -> str:
     """Format a custom command as expected by the Pike AST.
@@ -80,10 +79,6 @@ def create_command_string(
         This is how the AST knows where to pass the call to.
     args: list[str]
         A list of string arguments to pass to the command.
-    for_embedding_in_markdown: bool
-        The AST parser requires two \n\n to pick up on HTML blocks.
-
-        This sets those.
     kwargs: dict[str, Any]
         A dict of keyword arguments to pass to the command.
 
@@ -98,8 +93,6 @@ def create_command_string(
         A formatted command string built using HTML blocks.
     """
     data = StringIO()
-    if for_embedding_in_markdown:
-        data.write("\n")
 
     data.write(f"<{MARKER} {command_name} ARGS")
     for argument in args:
@@ -113,9 +106,6 @@ def create_command_string(
         data.write(f" {key}|{_b64_encode(value)}")
 
     data.write(">")
-
-    if for_embedding_in_markdown:
-        data.write("\n\n")
 
     return data.getvalue()
 
