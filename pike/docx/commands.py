@@ -157,6 +157,7 @@ def insert_text(
     italic: bool = None,
     highlight: bool = None,
     underline: bool = None,
+    style: str = None,
 ):
     """A custom command to add a text block to the document.
 
@@ -176,12 +177,19 @@ def insert_text(
         Should this be highlighted?
     underline: bool
         Should this be underlined?
+    style: str
+        The style to use for the given text.
+
+        Cannot be used in conjunction with inline.
     """
     bold = commons.value_to_bool(bold)
     inline = commons.value_to_bool(inline)
     italic = commons.value_to_bool(italic)
     highlight = commons.value_to_bool(highlight)
     underline = commons.value_to_bool(underline)
+
+    if style is not None and inline is True:
+        raise ValueError("Style and Inline are mutually exclusive.")
 
     current_run: CurrentRun = CurrentRun(
         bold=bold, italic=italic, highlight=highlight, underline=underline
@@ -191,6 +199,9 @@ def insert_text(
         if docx.current_paragraph is not None
         else docx.template_file.add_paragraph()
     )
+
+    if style is not None:
+        current_paragraph.style = style
 
     if inline is True:
         # Inline code block
