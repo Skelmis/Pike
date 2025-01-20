@@ -3,7 +3,9 @@ from __future__ import annotations
 import csv
 from enum import Enum
 from imaplib import Literal
+from io import StringIO
 from pathlib import Path
+from typing import cast
 
 from markdown_it.token import Token
 from pydantic import BaseModel
@@ -89,6 +91,89 @@ class Table:
 
     def __repr__(self):
         return f"Table({self.rows=}, {self.has_header_row=}, {self.column_widths=})"
+
+    def as_markdown(self) -> str:
+        """Returns a markdown representation of this table
+
+        Notes
+        -----
+        This returns content using custom commands
+        as we can provide more data easier.
+        """
+        if self.column_widths is not None:
+            raise ValueError(
+                "Cannot create a markdown table which "
+                "requires column widths at this stage."
+            )
+
+        table = StringIO()
+        if self.has_header_row:
+            table.write("|")
+            for cell in self.rows.pop(0).cells:
+                for entry in cell.content:
+                    table.write(
+                        commands.create_command_string(
+                            "insert_text",
+                            entry.text,
+                            bold=entry.style.bold if entry.style.bold else "",
+                            italic=entry.style.italic if entry.style.italic else "",
+                            underline=(
+                                entry.style.underline if entry.style.underline else ""
+                            ),
+                            highlight=(
+                                entry.style.highlighted
+                                if entry.style.highlighted
+                                else ""
+                            ),
+                        )
+                    )
+                table.write("|")
+            table.write("\n")
+
+            table.write("|")
+            if self.text_alignment is None:
+                table.write("---|" * len(self.rows[0].cells))
+            else:
+                for entry in self.text_alignment:
+                    table.write(
+                        ":--|"
+                        if entry is TextAlignment.LEFT
+                        else (
+                            "--:|"
+                            if entry is TextAlignment.RIGHT
+                            else ":-:|" if entry is TextAlignment.CENTER else "|"
+                        )
+                    )
+
+            table.write("\n")
+        else:
+            raise ValueError("Unsure how to proceed without headers")
+
+        for row in self.rows:
+            table.write("|")
+            for cell in row.cells:
+                for entry in cell.content:
+                    table.write(
+                        commands.create_command_string(
+                            "insert_text",
+                            entry.text,
+                            bold=entry.style.bold if entry.style.bold else "",
+                            italic=entry.style.italic if entry.style.italic else "",
+                            underline=(
+                                entry.style.underline if entry.style.underline else ""
+                            ),
+                            highlight=(
+                                entry.style.highlighted
+                                if entry.style.highlighted
+                                else ""
+                            ),
+                        )
+                    )
+                table.write("|")
+            table.write("\n")
+
+        print(table.getvalue())
+        return table.getvalue()
 
     @classmethod
     def text_to_cell(cls, content: str) -> Cell:

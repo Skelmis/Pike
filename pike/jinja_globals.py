@@ -5,7 +5,10 @@ import typing
 from io import StringIO
 from pathlib import Path
 
+from lxml.html.builder import TABLE
+
 from pike.docx import commands
+from pike.structs import Table
 
 if typing.TYPE_CHECKING:
     from pike import Engine, File
@@ -68,3 +71,16 @@ def insert_image(
         data.write(f" title='{caption}'")
     data.write(">")
     return data.getvalue()
+
+
+def insert_table_from_csv(
+    file: Path,
+    file_contains_headers: bool = True,
+    column_widths: list[float] = None,
+) -> str:
+    table = Table.from_csv_file(
+        file,
+        file_contains_headers=file_contains_headers,
+        column_widths=column_widths,
+    )
+    return table.as_markdown()
