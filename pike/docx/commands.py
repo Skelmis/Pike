@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import typing
 from base64 import b64decode, b64encode
 from io import StringIO
@@ -16,6 +17,7 @@ if typing.TYPE_CHECKING:
     from pike.docx import Docx
 
 MARKER: Final[str] = "MARK-807e2383866d289f54e35bb8b2f2918c"
+COMMAND_REGEX: Final[re.Pattern] = re.compile(rf"(<{MARKER}.*?>)")
 
 
 class Command(BaseModel):
@@ -128,8 +130,17 @@ def split_str_into_command_blocks(text: str) -> list[str | Command]:
     text: str
         The text which may or may not contain commands
     """
-    # TODO Implement using re.split!
-    raise NotImplementedError()
+    data: list[str | Command] = []
+    for entry in re.split(COMMAND_REGEX, text):
+        if entry == "":
+            continue
+
+        try:
+            data.append(parse_command_string(entry))
+        except ValueError:
+            data.append(entry)
+
+    return data
 
 
 def insert_page_break(docx: Docx):

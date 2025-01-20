@@ -42,7 +42,7 @@ def test_split_str_into_command_blocks():
     assert isinstance(r_2[0], commands.Command)
     assert len(r_2) == 1
 
-    r_3 = (
+    r_3_str = (
         "<MARK-807e2383866d289f54e35bb8b2f2918c insert_text "
         "ARGS SGkgSSBhbSA= KWARGS> <MARK-807e2383866d289f54e35bb8b2f2918c "
         "insert_text ARGS aXRhbGljICsgYm9sZA== KWARGS Ym9sZHxWSEoxWlE9PQ== "
@@ -50,6 +50,7 @@ def test_split_str_into_command_blocks():
         "ARGS YW5k KWARGS> <MARK-807e2383866d289f54e35bb8b2f2918c insert_text ARGS "
         "aW5saW5l KWARGS aW5saW5lfFZISjFaUT09>"
     )
+    r_3 = commands.split_str_into_command_blocks(r_3_str)
     assert isinstance(r_3, list)
     assert len(r_3) == 7
     assert isinstance(r_3[0], commands.Command)

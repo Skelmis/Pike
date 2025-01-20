@@ -341,12 +341,27 @@ class Docx:
                     current_paragraph.add_run().add_break()
                 case "text":
                     # Add text to document with current styles
-                    self.add_text(
-                        current_token.content,
-                        paragraph=current_paragraph,
-                        document=template_file,
-                        current_run=variables.current_run,
-                    )
+                    for item in commands.split_str_into_command_blocks(
+                        current_token.content
+                    ):
+                        if isinstance(item, commands.Command):
+                            command_callable = self.commands.get(item.command)
+                            if command_callable is None:
+                                raise ValueError(
+                                    f"Attempted to use an unknown custom command: {item.command}"
+                                )
+
+                            command_callable(
+                                *item.arguments,
+                                **item.keyword_arguments,
+                            )
+                        else:
+                            self.add_text(
+                                item,
+                                paragraph=current_paragraph,
+                                document=template_file,
+                                current_run=variables.current_run,
+                            )
                 case "table_open":
                     # This denotes a Markdown table
                     table_ast = get_up_to_token(
@@ -388,34 +403,34 @@ class Docx:
                                 cell_idx
                             ]
                             for entry in cell_model.content:
-                                # TODO Refactor all of these checks to use split_str_into_command_blocks
-                                if entry.text.startswith(f"<{commands.MARKER}"):
-                                    command: commands.Command = (
-                                        commands.parse_command_string(entry.text)
-                                    )
-                                    command_callable = self.commands.get(
-                                        command.command
-                                    )
-                                    if command_callable is None:
-                                        raise ValueError(
-                                            f"Attempted to use an unknown custom command: {command.command}"
+                                for item in commands.split_str_into_command_blocks(
+                                    entry.text
+                                ):
+                                    if isinstance(item, commands.Command):
+                                        command_callable = self.commands.get(
+                                            item.command
                                         )
+                                        if command_callable is None:
+                                            raise ValueError(
+                                                f"Attempted to use an unknown custom command: {item.command}"
+                                            )
 
-                                    old_pg = self.current_paragraph
-                                    self.current_paragraph = (
-                                        current_cell_paragraph.add_run()
-                                    )
-                                    command_callable(
-                                        *command.arguments, **command.keyword_arguments
-                                    )
-                                    self.current_paragraph = old_pg
-                                else:
-                                    self.add_text(
-                                        entry.text,
-                                        current_run=entry.style,
-                                        document=template_file,
-                                        paragraph=current_cell_paragraph.add_run(),
-                                    )
+                                        old_pg = self.current_paragraph
+                                        self.current_paragraph = (
+                                            current_cell_paragraph.add_run()
+                                        )
+                                        command_callable(
+                                            *item.arguments,
+                                            **item.keyword_arguments,
+                                        )
+                                        self.current_paragraph = old_pg
+                                    else:
+                                        self.add_text(
+                                            item,
+                                            current_run=entry.style,
+                                            document=template_file,
+                                            paragraph=current_cell_paragraph.add_run(),
+                                        )
 
                 case "bullet_list_open":
                     # Handle a new bulleted list
