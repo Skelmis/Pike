@@ -172,7 +172,6 @@ class Table:
                 table.write("|")
             table.write("\n")
 
-        print(table.getvalue())
         return table.getvalue()
 
     @classmethod

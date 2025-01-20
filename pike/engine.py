@@ -118,7 +118,8 @@ class Engine:
         )
         checks.ensure_layout_exists(base_directory, config)
         variables = utils.read_file_as_json(
-            base_directory / "variables.json", allow_missing=True
+            base_directory / "configuration" / "variables.json",
+            allow_missing=True,
         )
         global_variables = {**variables, "globals": variables}
         return cls(
