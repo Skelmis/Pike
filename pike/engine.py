@@ -63,10 +63,10 @@ class Engine:
     def add_custom_command(
         self,
         command_name: str,
-        command_callable: Callable[[...], ...],
+        command_callable: Callable[..., ...],
         *,
         provide_docx_instance: bool = False,
-    ) -> Docx:
+    ) -> Engine:
         """Load a custom command into the Engine.
 
         This method will load a custom command into the Docx AST
@@ -93,7 +93,6 @@ class Engine:
         self._jinja_custom_commands[command_name] = partial(
             commands.create_command_string,
             command_name,
-            for_embedding_in_markdown=True,
         )
         return self
 
@@ -119,7 +118,8 @@ class Engine:
         )
         checks.ensure_layout_exists(base_directory, config)
         variables = utils.read_file_as_json(
-            base_directory / "variables.json", allow_missing=True
+            base_directory / "configuration" / "variables.json",
+            allow_missing=True,
         )
         global_variables = {**variables, "globals": variables}
         return cls(
@@ -138,10 +138,21 @@ class Engine:
 
         Currently, these are:
         - add_page_break
+        - insert_text
         """
         self.add_custom_command(
             "add_page_break",
             commands.insert_page_break,
+            provide_docx_instance=True,
+        )
+        self.add_custom_command(
+            "insert_text",
+            commands.insert_text,
+            provide_docx_instance=True,
+        )
+        self.add_custom_command(
+            "insert_soft_break",
+            commands.insert_soft_break,
             provide_docx_instance=True,
         )
 

@@ -23,6 +23,7 @@ class File:
         self._injections: dict[str, t.Callable[[File, ...], t.Any]] = {
             "comment": partial(jg.comment, self),
             "insert_image": jg.insert_image,
+            "insert_table_from_csv": jg.insert_table_from_csv,
         }
 
         # TODO Create a test for this once virtual configurations

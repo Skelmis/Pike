@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
+from imaplib import Literal
+from io import StringIO
 from pathlib import Path
-from typing import NamedTuple
+from typing import cast
 
 from markdown_it.token import Token
+from pydantic import BaseModel
 
 from pike import utils
-from pike.docx import CurrentRun, TableContext
+from pike.docx import CurrentRun, TableContext, commands, check_has_next
 
 
 class TextAlignment(Enum):
@@ -17,9 +20,10 @@ class TextAlignment(Enum):
     LEFT = 1
     CENTER = 2
     RIGHT = 3
+    NONE = 4
 
 
-class Entry(NamedTuple):
+class Entry(BaseModel):
     """A piece of text within a cell"""
 
     text: str
@@ -27,8 +31,11 @@ class Entry(NamedTuple):
     style: CurrentRun
     """How to style it"""
 
+    class Config:
+        arbitrary_types_allowed = True
 
-class Cell(NamedTuple):
+
+class Cell(BaseModel):
     # Stupid nesting to support
     # multiple styles in content
     """A cell, composed of various text pieces"""
@@ -36,7 +43,7 @@ class Cell(NamedTuple):
     """Said text pieces"""
 
 
-class Row(NamedTuple):
+class Row(BaseModel):
     """The cells within a given row"""
 
     cells: list[Cell]
@@ -52,7 +59,9 @@ class Table:
         column_widths: list[float] = None,
         text_alignment: list[TextAlignment] = None,
     ):
-        """
+        """Handles basic tables.
+
+        If you want merged cells, etc. Make a custom command.
 
         Parameters
         ----------
@@ -83,6 +92,88 @@ class Table:
     def __repr__(self):
         return f"Table({self.rows=}, {self.has_header_row=}, {self.column_widths=})"
 
+    def as_markdown(self) -> str:
+        """Returns a markdown representation of this table
+
+        Notes
+        -----
+        This returns content using custom commands
+        as we can provide more data easier.
+        """
+        if self.column_widths is not None:
+            raise ValueError(
+                "Cannot create a markdown table which "
+                "requires column widths at this stage."
+            )
+
+        table = StringIO()
+        if self.has_header_row:
+            table.write("|")
+            for cell in self.rows.pop(0).cells:
+                for entry in cell.content:
+                    table.write(
+                        commands.create_command_string(
+                            "insert_text",
+                            entry.text,
+                            bold=entry.style.bold if entry.style.bold else "",
+                            italic=entry.style.italic if entry.style.italic else "",
+                            underline=(
+                                entry.style.underline if entry.style.underline else ""
+                            ),
+                            highlight=(
+                                entry.style.highlighted
+                                if entry.style.highlighted
+                                else ""
+                            ),
+                        )
+                    )
+                table.write("|")
+            table.write("\n")
+
+            table.write("|")
+            if self.text_alignment is None:
+                table.write("---|" * len(self.rows[0].cells))
+            else:
+                for entry in self.text_alignment:
+                    table.write(
+                        ":--|"
+                        if entry is TextAlignment.LEFT
+                        else (
+                            "--:|"
+                            if entry is TextAlignment.RIGHT
+                            else ":-:|" if entry is TextAlignment.CENTER else "|"
+                        )
+                    )
+
+            table.write("\n")
+        else:
+            raise ValueError("Unsure how to proceed without headers")
+
+        for row in self.rows:
+            table.write("|")
+            for cell in row.cells:
+                for entry in cell.content:
+                    table.write(
+                        commands.create_command_string(
+                            "insert_text",
+                            entry.text,
+                            bold=entry.style.bold if entry.style.bold else "",
+                            italic=entry.style.italic if entry.style.italic else "",
+                            underline=(
+                                entry.style.underline if entry.style.underline else ""
+                            ),
+                            highlight=(
+                                entry.style.highlighted
+                                if entry.style.highlighted
+                                else ""
+                            ),
+                        )
+                    )
+                table.write("|")
+            table.write("\n")
+
+        return table.getvalue()
+
     @classmethod
     def text_to_cell(cls, content: str) -> Cell:
         """Given some text, AST it and return a valid cell"""
@@ -104,12 +195,12 @@ class Table:
                         # Toss the empties, they shouldn't
                         # matter to end docx anyway
                         current_row_entries.append(
-                            Entry(token.content, style=current_run)
+                            Entry(text=token.content, style=current_run)
                         )
                         # So they don't clutter each other
                         current_run = CurrentRun()
 
-        return Cell(current_row_entries)
+        return Cell(content=current_row_entries)
 
     @classmethod
     def from_csv_file(
@@ -161,19 +252,31 @@ class Table:
         text_alignment: list[TextAlignment] = []
 
         rows: list[Row] = []
+        current_token_index: int = 0
         current_cells: list[Cell] = []
         current_row_entries: list[Entry] = []
         current_style: CurrentRun = CurrentRun()
-        for token in utils.flatten_ast(tokens):
-            if token.type == "th_open" and token.attrs.get("style"):
-                # Get alignments
-                match token.attrs["style"]:
-                    case "text-align:right":
-                        text_alignment.append(TextAlignment.RIGHT)
-                    case "text-align:left":
-                        text_alignment.append(TextAlignment.LEFT)
-                    case "text-align:center":
-                        text_alignment.append(TextAlignment.CENTER)
+        tokens = utils.flatten_ast(tokens)
+        while check_has_next(tokens, current_token_index):
+            token: Token = tokens[current_token_index]
+            current_token_index += 1
+
+            if token.type == "th_open":
+                if token.attrs.get("style"):
+                    # Get alignments
+                    match token.attrs["style"]:
+                        case "text-align:right":
+                            text_alignment.append(TextAlignment.RIGHT)
+                        case "text-align:left":
+                            text_alignment.append(TextAlignment.LEFT)
+                        case "text-align:center":
+                            text_alignment.append(TextAlignment.CENTER)
+                        case _:
+                            raise ValueError("Expected a style")
+
+                else:
+                    # Let Docx decide
+                    text_alignment.append(TextAlignment.NONE)
 
             match token.type:
                 # TODO Support underline and highlighting
@@ -186,21 +289,56 @@ class Table:
                 case "em_close":
                     current_style.italic = False
                 case "text":
-                    current_row_entries.append(
-                        Entry(token.content, style=current_style)
-                    )
+                    if token.content != "":
+                        # Saves empty rows with nothing in them
+                        #
+                        # This may break something, but until it
+                        # does this is the behaviour
+
+                        current_row_entries.append(
+                            Entry(text=token.content, style=current_style)
+                        )
+
+                    current_style = CurrentRun()
                 case "tr_close":
                     # We've finished a row
-                    rows.append(Row(current_cells))
+                    rows.append(Row(cells=current_cells))
                     current_cells = []
                 case "th_close":
                     # Finished a cell in the header row
-                    current_cells.append(Cell(current_row_entries))
+                    current_cells.append(Cell(content=current_row_entries))
                     current_row_entries = []
                 case "td_close":
                     # Finished a data cell
-                    current_cells.append(Cell(current_row_entries))
+                    current_cells.append(Cell(content=current_row_entries))
                     current_row_entries = []
+                case "code_inline":
+                    # A simple way to add formatting
+                    # when its not in CurrentRun
+                    current_row_entries.append(
+                        Entry(
+                            text=commands.create_command_string(
+                                "insert_text", token.content, inline=True
+                            ),
+                            style=current_style,
+                        )
+                    )
+                case "html_block" | "html_inline":
+                    # See custom commands and turn them into blocks
+                    if token.content.startswith(f"<{commands.MARKER}"):
+                        # On the rendered to parse for cmds
+                        current_row_entries.append(
+                            Entry(
+                                text=token.content,
+                                style=current_style,
+                            )
+                        )
+
+                    else:
+                        # TODO Support images? Maybe
+                        raise ValueError(
+                            "This HTML isn't supported in tables right now."
+                        )
 
         return cls(
             rows=rows,

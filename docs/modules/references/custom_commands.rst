@@ -9,6 +9,12 @@ will then pick up and run. This essentially lets users
 provide custom functionality on top of what raw
 Markdown has to offer.
 
+Sometimes the AST will fail to parse out a command from
+text / other items. If this happens please open an issue.
+
+I've considered making it a smart check on text, but
+until I can reproduce said things I find it unlikely.
+
 Command Syntax
 --------------
 
@@ -47,3 +53,8 @@ An example of this in action may look like:
 .. autofunction:: create_command_string
 
 .. py:attribute:: MARKER
+
+.. autofunction:: insert_page_break
+
+.. autofunction:: insert_text
+

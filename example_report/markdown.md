@@ -200,16 +200,15 @@ Tables:
 | Paragraph   | Text        |
 
 Table alignment: (left, middle, right)
-| Syntax      | Description | Test Text     |
-| :---        |    :----:   |          ---: |
-| Header      | Title       | Here's this   |
-| Paragraph   | Text        | And more      |
+| Aligned   | Description | Test Text |Normal   |
+| :---      |    :----:   |      ---: | ---     |
+| Left      | Middle      | Right     | Regular |
 
 Table formatting:
-| Syntax      | Description |
+| Formatting      | Here |
 | ----------- | ----------- |
-| *Header*    | \`Title\` TODO Fix code inline once implemented     |
-| **Paragraph**   | Text        |
+| *Italic*    | `Inline` |
+| **Bold**   | Nothing        |
 
 
 Code: (no syntax highlighting)

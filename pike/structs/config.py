@@ -18,6 +18,8 @@ class StylesT(TypedDict):
     """The style to use for inline code blocks"""
     code_block: str
     """The style to use for code blocks"""
+    table: str
+    """The style to use for tables"""
 
 
 class OutputDocumentsT(TypedDict):

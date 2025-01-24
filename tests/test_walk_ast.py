@@ -259,7 +259,6 @@ def test_bold_title(engine: Engine, data_dir: Path) -> None:
     docx.walk_ast(document, ast)
     assert document.mock_calls == [
         call.add_heading(level=1),
-        call.add_heading().add_run(""),
         call.add_heading().add_run("Bold"),
         call.add_heading().add_run(" nothing "),
         call.add_heading().add_run("italic"),

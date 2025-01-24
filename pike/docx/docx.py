@@ -10,18 +10,27 @@ from unittest.mock import Mock
 
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_COLOR_INDEX, WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, RGBColor
 from docx.styles.style import ParagraphStyle
+from docx.table import _Cell
 from docx.text.paragraph import Paragraph
 from docx.text.parfmt import ParagraphFormat
 from docx.text.run import Run
 from markdown_it.token import Token
 
-from pike import utils
-from pike.docx import Variables, List, check_has_next, commands
+from pike import utils, structs
+from pike.docx import (
+    Variables,
+    List,
+    check_has_next,
+    commands,
+    get_up_to_token,
+    CurrentRun,
+)
 
 if t.TYPE_CHECKING:
     from pike import Engine
@@ -47,7 +56,12 @@ class Docx:
             # which need an out to avoid displaying None
             "NOP": lambda: None,
         }
+
+        # These can be used by external things
+        # Check they are None first, but they do exist
+        # I'd like to refactor their usage but eh
         self.template_file: Document | None = None
+        self.current_paragraph: Paragraph | None = None
 
     def import_commands_from_engine(self):
         for command in self.engine._custom_commands_to_add:
@@ -141,7 +155,7 @@ class Docx:
         content: str,
         *,
         document: Document,
-        variables: Variables,
+        current_run: CurrentRun,
         paragraph: Paragraph | Run = None,
     ) -> Run:
         if paragraph is None:
@@ -161,12 +175,12 @@ class Docx:
             run: Run = paragraph.add_run(content)
 
         # Add the styles
-        run.bold = variables.current_run.bold
-        run.italic = variables.current_run.italic
-        run.underline = variables.current_run.underline
+        run.bold = current_run.bold
+        run.italic = current_run.italic
+        run.underline = current_run.underline
 
         # TODO support custom colors here via config?
-        if variables.current_run.highlighted:
+        if current_run.highlighted:
             run.font.highlight_color = WD_COLOR_INDEX.YELLOW
 
         return run
@@ -219,7 +233,6 @@ class Docx:
         ast: list[Token],
         *,
         variables: Variables | None = None,
-        current_paragraph: Paragraph | None = None,
     ) -> None:
         """Given an AST, go put the content into a Word document
 
@@ -231,8 +244,6 @@ class Docx:
             A list of tokens to walk and process
         variables: Variables
             A shared variable state
-        current_paragraph: Paragraph
-            The current paragraph we are writing to
 
         """
         if self.template_file is None:
@@ -265,7 +276,6 @@ class Docx:
                         template_file,
                         current_token.children,
                         variables=variables,
-                        current_paragraph=current_paragraph,
                     )
                 case "strong_open":
                     variables.current_run.bold = True
@@ -281,7 +291,7 @@ class Docx:
                     # for usage with bullet points n such
                     current_list: List | None = variables.get_current_list()
                     if current_list is None:
-                        current_paragraph = template_file.add_paragraph()
+                        self.current_paragraph = template_file.add_paragraph()
 
                     else:
                         # We need to deal with list nesting's
@@ -299,36 +309,128 @@ class Docx:
                                 f"level_{nesting_level}"  # noqa
                             ]
 
-                        current_paragraph = template_file.add_paragraph(style=style)
+                        self.current_paragraph = template_file.add_paragraph(
+                            style=style
+                        )
                         if (
                             list_order_requires_restart
                             and current_list.list_type != "bullet"
                         ):
                             # It's a new ordered list so requires restart
-                            current_paragraph.restart_numbering()
+                            self.current_paragraph.restart_numbering()
                             list_order_requires_restart = False
                 case "paragraph_close":
                     # Reset the current paragraph to null
-                    current_paragraph = None
+                    self.current_paragraph = None
                 case "heading_close":
-                    current_paragraph = None
+                    self.current_paragraph = None
                 case "softbreak":
                     # This represents a newline
-                    assert current_paragraph is not None  # nosec B101
-                    current_paragraph.add_run().add_break()
+                    if self.current_paragraph is None:
+                        # Unsure why this is None here...
+                        self.current_paragraph = self.current_paragraph = (
+                            template_file.add_paragraph()
+                        )
+                    else:
+                        # Else otherwise it'd be two newlines
+                        self.current_paragraph.add_run().add_break()
                 case "text":
                     # Add text to document with current styles
-                    self.add_text(
-                        current_token.content,
-                        paragraph=current_paragraph,
-                        document=template_file,
-                        variables=variables,
-                    )
+                    for item in commands.split_str_into_command_blocks(
+                        current_token.content
+                    ):
+                        if isinstance(item, commands.Command):
+                            command_callable = self.commands.get(item.command)
+                            if command_callable is None:
+                                raise ValueError(
+                                    f"Attempted to use an unknown custom command: {item.command}"
+                                )
+
+                            command_callable(
+                                *item.arguments,
+                                **item.keyword_arguments,
+                            )
+                        else:
+                            self.add_text(
+                                item,
+                                paragraph=self.current_paragraph,
+                                document=template_file,
+                                current_run=variables.current_run,
+                            )
                 case "table_open":
-                    # This denotes a markdown table
-                    # TODO Walk ahead, grab the entire table AST
-                    #      and pass it off to a method for handling
-                    pass
+                    # This denotes a Markdown table
+                    table_ast = get_up_to_token(
+                        ast,
+                        end_token_type="table_close",
+                        current_idx=current_token_index,
+                    )
+                    current_token_index += len(table_ast)
+                    table_model = structs.Table.from_ast(table_ast)
+                    docx_table = template_file.add_table(
+                        rows=len(table_model.rows),
+                        cols=len(table_model.rows[0].cells),
+                        style=self.engine.config["styles"]["table"],
+                    )
+                    for row_idx, row in enumerate(docx_table.rows):
+                        for cell_idx, cell in enumerate(row.cells):
+                            cell = t.cast(_Cell, cell)
+                            current_cell_paragraph = cell.paragraphs[0]
+
+                            if (
+                                table_model.text_alignment[cell_idx]
+                                != structs.TextAlignment.NONE
+                            ):
+                                match table_model.text_alignment[cell_idx]:
+                                    case structs.TextAlignment.LEFT:
+                                        current_cell_paragraph.paragraph_format.alignment = (
+                                            WD_TABLE_ALIGNMENT.LEFT
+                                        )
+                                    case structs.TextAlignment.CENTER:
+                                        current_cell_paragraph.paragraph_format.alignment = (
+                                            WD_TABLE_ALIGNMENT.CENTER
+                                        )
+                                    case structs.TextAlignment.RIGHT:
+                                        current_cell_paragraph.paragraph_format.alignment = (
+                                            WD_TABLE_ALIGNMENT.RIGHT
+                                        )
+
+                            cell_model: structs.Cell = table_model.rows[row_idx].cells[
+                                cell_idx
+                            ]
+                            for entry in cell_model.content:
+                                for item in commands.split_str_into_command_blocks(
+                                    entry.text
+                                ):
+                                    if isinstance(item, commands.Command):
+                                        command_callable = self.commands.get(
+                                            item.command
+                                        )
+                                        if command_callable is None:
+                                            raise ValueError(
+                                                f"Attempted to use an unknown custom command: {item.command}"
+                                            )
+
+                                        old_pg = self.current_paragraph
+                                        self.current_paragraph = (
+                                            current_cell_paragraph.add_run()
+                                        )
+                                        command_callable(
+                                            *item.arguments,
+                                            **item.keyword_arguments,
+                                        )
+                                        self.current_paragraph = old_pg
+                                    else:
+                                        self.add_text(
+                                            item,
+                                            current_run=entry.style,
+                                            document=template_file,
+                                            paragraph=current_cell_paragraph.add_run(),
+                                        )
+
+                    # Continue here since we have mutated
+                    # the current index already
+                    continue
+
                 case "bullet_list_open":
                     # Handle a new bulleted list
                     # In theory every 'new' list should be at
@@ -352,7 +454,7 @@ class Docx:
                     variables.remove_current_list()
                 case "heading_open":
                     level = int(current_token.tag[-1])
-                    current_paragraph = template_file.add_heading(level=level)
+                    self.current_paragraph = template_file.add_heading(level=level)
 
                 case "html_block" | "html_inline":
                     # Figure out the type of HTML we have
@@ -395,29 +497,30 @@ class Docx:
                             title=title,
                             alt_text=alt,
                         )
+                        current_token_index += 1
+                        continue
 
-                    elif current_token.content.startswith(f"<{commands.MARKER}"):
-                        command: commands.Command = commands.parse_command_string(
-                            current_token.content
-                        )
-                        command_callable = self.commands.get(command.command)
-                        if command_callable is None:
-                            raise ValueError(
-                                f"Attempted to use an unknown custom command: {command.command}"
+                    for item in commands.split_str_into_command_blocks(
+                        current_token.content
+                    ):
+                        if isinstance(item, commands.Command):
+                            command_callable = self.commands.get(item.command)
+                            if command_callable is None:
+                                raise ValueError(
+                                    f"Attempted to use an unknown custom command: {item.command}"
+                                )
+
+                            command_callable(
+                                *item.arguments,
+                                **item.keyword_arguments,
                             )
-
-                        command_callable(
-                            *command.arguments, **command.keyword_arguments
-                        )
-
-                    else:
-                        # Fall back to text
-                        self.add_text(
-                            current_token.content,
-                            paragraph=current_paragraph,
-                            document=template_file,
-                            variables=variables,
-                        )
+                        else:
+                            self.add_text(
+                                item,
+                                paragraph=self.current_paragraph,
+                                document=template_file,
+                                current_run=variables.current_run,
+                            )
 
                 case "image":
                     # Insert an image
@@ -432,14 +535,14 @@ class Docx:
                     )
 
                 case "code_inline":
-                    run = current_paragraph.add_run(
+                    run = self.current_paragraph.add_run(
                         style=self.engine.config["styles"]["inline_code"]
                     )
                     self.add_text(
                         current_token.content,
                         paragraph=run,
                         document=template_file,
-                        variables=variables,
+                        current_run=variables.current_run,
                     )
 
                 case "fence":
@@ -450,9 +553,10 @@ class Docx:
                     # title = current_token.attrs.get("title")
                     href = current_token.attrs["href"]
                     text = ast[current_token_index + 1].content
-                    current_paragraph.add_external_hyperlink(href, text)
+                    self.current_paragraph.add_external_hyperlink(href, text)
                     # Skip the 'text' and 'link_close' block
                     current_token_index += 2
+                    continue
                 case "hr":
                     # Insert a horizontal line
                     template_file.add_paragraph().draw_paragraph_border(top=True)

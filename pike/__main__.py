@@ -78,7 +78,7 @@ def scaffold(
         data["title"] = title
     if project_id is not None:
         data["project_id"] = project_id
-    with open(target_directory / "variables.json", "w") as f:
+    with open(config_dir / "variables.json", "w") as f:
         f.write(json.dumps(data))
     pike_path = Path(__file__).parent.parent
     shutil.copy(
