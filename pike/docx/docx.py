@@ -101,6 +101,28 @@ class Docx:
         self.commands[command_name] = command_callable
         return self
 
+    def insert_cell(self, cell: structs.Cell) -> None:
+        for entry in cell.content:
+            for item in commands.split_str_into_command_blocks(entry.text):
+                if isinstance(item, commands.Command):
+                    command_callable = self.commands.get(item.command)
+                    if command_callable is None:
+                        raise ValueError(
+                            f"Attempted to use an unknown custom command: {item.command}"
+                        )
+
+                    command_callable(
+                        *item.arguments,
+                        **item.keyword_arguments,
+                    )
+                else:
+                    self.add_text(
+                        item,
+                        current_run=entry.style,
+                        document=self.template_file,
+                        paragraph=self.current_paragraph,
+                    )
+
     def create_document(
         self,
         *,
@@ -130,6 +152,23 @@ class Docx:
         )
         if self.enable_ordered_lists:
             self.template_file.configure_styles_for_numbered_lists()
+
+        if self.engine.docx_header is not None:
+            as_formatting: structs.Cell = structs.Table.text_to_cell(
+                self.engine.docx_header
+            )
+            p = self.template_file.sections[0].header.paragraphs[0]
+            self.current_paragraph = p
+            self.insert_cell(as_formatting)
+            self.current_paragraph = None
+
+        if self.engine.docx_footer is not None:
+            as_formatting: structs.Cell = structs.Table.text_to_cell(
+                self.engine.docx_footer
+            )
+            p = self.template_file.sections[0].footer.paragraphs[0]
+            self.current_paragraph = p
+            self.insert_cell(as_formatting)
 
         self.walk_ast(template_file=self.template_file, ast=ast)
         self.template_file.save(filename)

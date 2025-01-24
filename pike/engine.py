@@ -43,6 +43,9 @@ class Engine:
         self._file_variables: dict[str, dict[str, Any]] = {}
         self._folder_variables: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
 
+        self.docx_header: str | None = None
+        self.docx_footer: str | None = None
+
         if self.config["use_sandbox"]:
             self.jinja_env: SandboxedEnvironment | Environment = SandboxedEnvironment(
                 lstrip_blocks=True,
