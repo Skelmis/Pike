@@ -233,7 +233,6 @@ class Docx:
         ast: list[Token],
         *,
         variables: Variables | None = None,
-        current_paragraph: Paragraph | None = None,
     ) -> None:
         """Given an AST, go put the content into a Word document
 
@@ -245,8 +244,6 @@ class Docx:
             A list of tokens to walk and process
         variables: Variables
             A shared variable state
-        current_paragraph: Paragraph
-            The current paragraph we are writing to
 
         """
         if self.template_file is None:
@@ -279,7 +276,6 @@ class Docx:
                         template_file,
                         current_token.children,
                         variables=variables,
-                        current_paragraph=current_paragraph,
                     )
                 case "strong_open":
                     variables.current_run.bold = True
@@ -295,9 +291,7 @@ class Docx:
                     # for usage with bullet points n such
                     current_list: List | None = variables.get_current_list()
                     if current_list is None:
-                        current_paragraph = self.current_paragraph = (
-                            template_file.add_paragraph()
-                        )
+                        self.current_paragraph = template_file.add_paragraph()
 
                     else:
                         # We need to deal with list nesting's
@@ -315,30 +309,31 @@ class Docx:
                                 f"level_{nesting_level}"  # noqa
                             ]
 
-                        current_paragraph = self.current_paragraph = (
-                            template_file.add_paragraph(style=style)
+                        self.current_paragraph = template_file.add_paragraph(
+                            style=style
                         )
                         if (
                             list_order_requires_restart
                             and current_list.list_type != "bullet"
                         ):
                             # It's a new ordered list so requires restart
-                            current_paragraph.restart_numbering()
+                            self.current_paragraph.restart_numbering()
                             list_order_requires_restart = False
                 case "paragraph_close":
                     # Reset the current paragraph to null
-                    current_paragraph = self.current_paragraph = None
+                    self.current_paragraph = None
                 case "heading_close":
-                    current_paragraph = self.current_paragraph = None
+                    self.current_paragraph = None
                 case "softbreak":
                     # This represents a newline
-                    if current_paragraph is None:
+                    if self.current_paragraph is None:
                         # Unsure why this is None here...
-                        current_paragraph = self.current_paragraph = (
+                        self.current_paragraph = self.current_paragraph = (
                             template_file.add_paragraph()
                         )
-
-                    current_paragraph.add_run().add_break()
+                    else:
+                        # Else otherwise it'd be two newlines
+                        self.current_paragraph.add_run().add_break()
                 case "text":
                     # Add text to document with current styles
                     for item in commands.split_str_into_command_blocks(
@@ -358,7 +353,7 @@ class Docx:
                         else:
                             self.add_text(
                                 item,
-                                paragraph=current_paragraph,
+                                paragraph=self.current_paragraph,
                                 document=template_file,
                                 current_run=variables.current_run,
                             )
@@ -432,6 +427,10 @@ class Docx:
                                             paragraph=current_cell_paragraph.add_run(),
                                         )
 
+                    # Continue here since we have mutated
+                    # the current index already
+                    continue
+
                 case "bullet_list_open":
                     # Handle a new bulleted list
                     # In theory every 'new' list should be at
@@ -455,9 +454,7 @@ class Docx:
                     variables.remove_current_list()
                 case "heading_open":
                     level = int(current_token.tag[-1])
-                    current_paragraph = self.current_paragraph = (
-                        template_file.add_heading(level=level)
-                    )
+                    self.current_paragraph = template_file.add_heading(level=level)
 
                 case "html_block" | "html_inline":
                     # Figure out the type of HTML we have
@@ -500,29 +497,30 @@ class Docx:
                             title=title,
                             alt_text=alt,
                         )
+                        current_token_index += 1
+                        continue
 
-                    elif current_token.content.startswith(f"<{commands.MARKER}"):
-                        command: commands.Command = commands.parse_command_string(
-                            current_token.content
-                        )
-                        command_callable = self.commands.get(command.command)
-                        if command_callable is None:
-                            raise ValueError(
-                                f"Attempted to use an unknown custom command: {command.command}"
+                    for item in commands.split_str_into_command_blocks(
+                        current_token.content
+                    ):
+                        if isinstance(item, commands.Command):
+                            command_callable = self.commands.get(item.command)
+                            if command_callable is None:
+                                raise ValueError(
+                                    f"Attempted to use an unknown custom command: {item.command}"
+                                )
+
+                            command_callable(
+                                *item.arguments,
+                                **item.keyword_arguments,
                             )
-
-                        command_callable(
-                            *command.arguments, **command.keyword_arguments
-                        )
-
-                    else:
-                        # Fall back to text
-                        self.add_text(
-                            current_token.content,
-                            paragraph=current_paragraph,
-                            document=template_file,
-                            current_run=variables.current_run,
-                        )
+                        else:
+                            self.add_text(
+                                item,
+                                paragraph=self.current_paragraph,
+                                document=template_file,
+                                current_run=variables.current_run,
+                            )
 
                 case "image":
                     # Insert an image
@@ -537,7 +535,7 @@ class Docx:
                     )
 
                 case "code_inline":
-                    run = current_paragraph.add_run(
+                    run = self.current_paragraph.add_run(
                         style=self.engine.config["styles"]["inline_code"]
                     )
                     self.add_text(
@@ -555,9 +553,10 @@ class Docx:
                     # title = current_token.attrs.get("title")
                     href = current_token.attrs["href"]
                     text = ast[current_token_index + 1].content
-                    current_paragraph.add_external_hyperlink(href, text)
+                    self.current_paragraph.add_external_hyperlink(href, text)
                     # Skip the 'text' and 'link_close' block
                     current_token_index += 2
+                    continue
                 case "hr":
                     # Insert a horizontal line
                     template_file.add_paragraph().draw_paragraph_border(top=True)

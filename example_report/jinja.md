@@ -23,4 +23,5 @@ Custom commands also work in tables:
 | ----------- |
 | {{insert_text("Hi I am ")}} {{insert_text("italic + bold", bold=True, italic=True)}} {{insert_text("and")}} {{insert_text("inline", inline=True)}}      |
 
-{{comment("Blocked until #5 is implemented")}}
+{{insert_soft_break()}}
+That's a soft break before this text. Useful for extra formatting and text after tables.

@@ -150,6 +150,11 @@ class Engine:
             commands.insert_text,
             provide_docx_instance=True,
         )
+        self.add_custom_command(
+            "insert_soft_break",
+            commands.insert_soft_break,
+            provide_docx_instance=True,
+        )
 
     def register_plugin(self, plugin: Callable[[Engine], None]) -> Engine:
         """Register a given callable as a plugin.

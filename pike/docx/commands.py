@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 import typing
 from base64 import b64decode, b64encode
@@ -16,6 +17,7 @@ from pike.docx import CurrentRun
 if typing.TYPE_CHECKING:
     from pike.docx import Docx
 
+log = logging.getLogger(__name__)
 MARKER: Final[str] = "MARK-807e2383866d289f54e35bb8b2f2918c"
 COMMAND_REGEX: Final[re.Pattern] = re.compile(rf"(<{MARKER}.*?>)")
 
@@ -146,6 +148,18 @@ def split_str_into_command_blocks(text: str) -> list[str | Command]:
 def insert_page_break(docx: Docx):
     """A custom command to add a page break to the document."""
     docx.template_file.add_page_break()
+
+
+def insert_soft_break(docx: Docx):
+    """Inserts a new soft break, essentially hitting enter."""
+    if docx.current_paragraph is None:
+        # Unsure why this is None here...
+        docx.current_paragraph = docx.current_paragraph = (
+            docx.template_file.add_paragraph()
+        )
+    else:
+        # Else otherwise it'd be a double up it seems
+        docx.current_paragraph.add_run().add_break()
 
 
 def insert_text(
