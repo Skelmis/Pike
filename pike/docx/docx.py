@@ -584,12 +584,10 @@ class Docx:
                                 self.current_paragraph = template_file.add_heading(
                                     level=len(level)
                                 )
-                                self.add_text(
-                                    text,
-                                    paragraph=self.current_paragraph,
-                                    document=template_file,
-                                    current_run=variables.current_run,
+                                as_formatting: structs.Cell = (
+                                    structs.Table.text_to_cell(text)
                                 )
+                                self.insert_cell(as_formatting)
                                 # In theory this will be reset before next insert
                                 # so this being None means no duplicate gaps
                                 self.current_paragraph = None
