@@ -23,6 +23,12 @@ class TextAlignment(Enum):
     NONE = 4
 
 
+class Link(BaseModel):
+    text: str
+    href: str
+    is_external_hyperlink: bool
+
+
 class Entry(BaseModel):
     """A piece of text within a cell"""
 
@@ -30,6 +36,7 @@ class Entry(BaseModel):
     """The text"""
     style: CurrentRun
     """How to style it"""
+    link: Link | None = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -288,6 +295,19 @@ class Table:
                     current_style.italic = True
                 case "em_close":
                     current_style.italic = False
+                case "link_open":
+                    # Once I know how to make word like this, use it
+                    # title = current_token.attrs.get("title")
+                    href = token.attrs["href"]
+                    text = tokens[current_token_index].content
+                    current_token_index += 1
+                    current_row_entries.append(
+                        Entry(
+                            text=text,
+                            style=current_style,
+                            link=Link(text=text, href=href, is_external_hyperlink=True),
+                        )
+                    )
                 case "text":
                     if token.content != "":
                         # Saves empty rows with nothing in them

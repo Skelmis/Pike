@@ -437,6 +437,18 @@ class Docx:
                                 cell_idx
                             ]
                             for entry in cell_model.content:
+                                if entry.link is not None:
+                                    if entry.link.is_external_hyperlink:
+                                        current_cell_paragraph.add_external_hyperlink(
+                                            entry.link.href, entry.link.text
+                                        )
+                                        continue
+
+                                    else:
+                                        raise ValueError(
+                                            f"Unsure how to handle {entry.link}"
+                                        )
+
                                 for item in commands.split_str_into_command_blocks(
                                     entry.text
                                 ):

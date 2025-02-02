@@ -4,6 +4,8 @@
 {{ file.content }}
 {% endfor -%}
 
+{{files.testing.content}}
+
 Thanks for coming!
 
 {{add_page_break()}}
