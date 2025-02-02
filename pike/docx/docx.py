@@ -478,6 +478,17 @@ class Docx:
                                             paragraph=current_cell_paragraph.add_run(),
                                         )
 
+                    # We add a paragraph here to ensure that subsequent tables don't
+                    # end up joined to this one as per #23
+                    if (
+                        current_token_index < len(ast)
+                        and ast[current_token_index].type == "table_open"
+                    ):
+                        if self.current_paragraph is None:
+                            self.current_paragraph = self.template_file.add_paragraph()
+                        else:
+                            self.current_paragraph.add_run().add_break()
+
                     # Continue here since we have mutated
                     # the current index already
                     continue
