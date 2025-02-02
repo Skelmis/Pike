@@ -577,12 +577,29 @@ class Docx:
                                 **item.keyword_arguments,
                             )
                         else:
-                            self.add_text(
-                                item,
-                                paragraph=self.current_paragraph,
-                                document=template_file,
-                                current_run=variables.current_run,
-                            )
+                            if item.startswith("\n#"):
+                                # Likely a botched heading
+                                item = item.lstrip()
+                                level, text = item.split(" ", maxsplit=1)
+                                self.current_paragraph = template_file.add_heading(
+                                    level=len(level)
+                                )
+                                self.add_text(
+                                    text,
+                                    paragraph=self.current_paragraph,
+                                    document=template_file,
+                                    current_run=variables.current_run,
+                                )
+                                # In theory this will be reset before next insert
+                                # so this being None means no duplicate gaps
+                                self.current_paragraph = None
+                            else:
+                                self.add_text(
+                                    item,
+                                    paragraph=self.current_paragraph,
+                                    document=template_file,
+                                    current_run=variables.current_run,
+                                )
 
                 case "image":
                     # Insert an image
