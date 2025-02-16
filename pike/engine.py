@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 import jinja2
-from docx import utility
+from skelmis.docx import utility
 from jinja2 import Environment
 from jinja2.sandbox import SandboxedEnvironment
 

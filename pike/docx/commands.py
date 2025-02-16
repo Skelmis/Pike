@@ -8,8 +8,8 @@ from io import StringIO
 from typing import Final, Any
 
 import commons
-from docx.text.paragraph import Paragraph
-from docx.text.run import Run
+from skelmis.docx.text.paragraph import Paragraph
+from skelmis.docx.text.run import Run
 from pydantic import BaseModel
 
 from pike.docx import CurrentRun

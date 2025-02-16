@@ -2,8 +2,8 @@ from pathlib import Path
 from unittest.mock import Mock, call
 
 import pytest
-from docx import Document
-from docx.text.run import Run
+from skelmis.docx import Document
+from skelmis.docx.text.run import Run
 
 from pike import Engine, File, utils, jinja_globals
 from pike.docx import Docx

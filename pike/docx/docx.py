@@ -8,18 +8,18 @@ from functools import partial
 from pathlib import Path
 from unittest.mock import Mock
 
-from docx import Document
-from docx.enum.style import WD_STYLE_TYPE
-from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_COLOR_INDEX, WD_PARAGRAPH_ALIGNMENT
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
-from docx.shared import Cm, RGBColor
-from docx.styles.style import ParagraphStyle
-from docx.table import _Cell
-from docx.text.paragraph import Paragraph
-from docx.text.parfmt import ParagraphFormat
-from docx.text.run import Run
+from skelmis.docx import Document
+from skelmis.docx.enum.style import WD_STYLE_TYPE
+from skelmis.docx.enum.table import WD_TABLE_ALIGNMENT
+from skelmis.docx.enum.text import WD_COLOR_INDEX, WD_PARAGRAPH_ALIGNMENT
+from skelmis.docx.oxml import OxmlElement
+from skelmis.docx.oxml.ns import qn
+from skelmis.docx.shared import Cm, RGBColor
+from skelmis.docx.styles.style import ParagraphStyle
+from skelmis.docx.table import _Cell
+from skelmis.docx.text.paragraph import Paragraph
+from skelmis.docx.text.parfmt import ParagraphFormat
+from skelmis.docx.text.run import Run
 from markdown_it.token import Token
 
 from pike import utils, structs
@@ -35,7 +35,7 @@ from pike.docx import (
 if t.TYPE_CHECKING:
     from pike import Engine
 
-    from docx.document import Document
+    from skelmis.docx.document import Document
 
 html_attribute_pattern: re.Pattern = re.compile(
     r"(\S+)=[\"']?((?:.(?![\"']?\s+\S+=|\s*/?[>\"']))+.)[\"']?"
