@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import shutil
 from collections import defaultdict
 from functools import partial
@@ -14,6 +15,8 @@ from jinja2.sandbox import SandboxedEnvironment
 from pike import File, checks, utils, structs, injections
 from pike.docx import Docx, commands
 from pike import jinja_globals as jg
+
+log = logging.getLogger(__name__)
 
 
 class Engine:
@@ -308,6 +311,12 @@ class Engine:
         self._folder_variables: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
 
         for file in self.files:
+            if file.id in self._file_variables:
+                log.warning(
+                    "Found two files using the id '%s', you should change one of them.",
+                    file.id,
+                )
+
             self._file_variables[file.id] = file.layout_variables
             self._folder_variables[file.folder.name][file.id] = file.layout_variables
 
