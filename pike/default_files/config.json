@@ -5,8 +5,8 @@
   "output_directory": "documents",
   "styles": {
     "text": "",
-    "inline_code": "Subtle Reference",
-    "code_block": "Subtle Reference",
+    "inline_code": "Source Text",
+    "code_block": "",
     "table": "Table Grid",
     "bullet_lists": {
       "level_1": "List Bullet",
@@ -21,7 +21,8 @@
   },
   "docx_create_styles": {
     "ordered_lists": false,
-    "code_block": false
+    "code_block": false,
+    "inline_code": false
   },
   "output_files": {
     "markdown": true,

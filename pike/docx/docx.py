@@ -51,6 +51,9 @@ class Docx:
         self.enable_code_blocks: bool = engine.config["docx_create_styles"][
             "code_block"
         ]
+        self.enable_inline_code: bool = engine.config["docx_create_styles"][
+            "inline_code"
+        ]
         self.commands: dict[str, Callable[[...], ...] | Callable[[], ...]] = {
             # A built-in NOP for commands and injections
             # which need an out to avoid displaying None
@@ -153,6 +156,9 @@ class Docx:
         if self.enable_ordered_lists:
             self.template_file.configure_styles_for_numbered_lists()
 
+        if self.enable_inline_code:
+            self._configure_for_inline_code()
+
         if self.engine.docx_header is not None:
             as_formatting: structs.Cell = structs.Table.text_to_cell(
                 self.engine.docx_header
@@ -224,16 +230,33 @@ class Docx:
 
         return run
 
-    def _configure_for_codeblocks(self):
-        self.engine.config["styles"]["code_block"] = "Code_Block"
+    def _configure_for_inline_code(self):
+        style_name: str = "_Pike_Inline_Code"
+        self.engine.config["styles"]["inline_code"] = style_name
 
-        if "Code_Block" in self.template_file.styles:
+        if style_name in self.template_file.styles:
+            # No need to duplicate
+            return
+
+        new_style = self.template_file.styles.add_style(
+            style_name, WD_STYLE_TYPE.CHARACTER
+        )
+        new_style.base_style = self.template_file.styles["Subtle Reference"]
+        new_style.font.small_caps = False
+        new_style.font.color.rgb = RGBColor(192, 80, 77)
+        new_style.font.name = "Liberation Mono"
+
+    def _configure_for_codeblocks(self):
+        style_name: str = "_Pike_Code_Block"
+        self.engine.config["styles"]["code_block"] = style_name
+
+        if style_name in self.template_file.styles:
             # No need to duplicate
             return
 
         document = self.template_file
         style: ParagraphStyle = document.styles.add_style(
-            "Code_Block", WD_STYLE_TYPE.PARAGRAPH
+            style_name, WD_STYLE_TYPE.PARAGRAPH
         )
         style.base_style = document.styles["Normal"]
 

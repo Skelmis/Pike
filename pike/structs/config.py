@@ -41,6 +41,8 @@ class CreationTypesT(TypedDict):
     """Should Pike create and use a default ordered list"""
     code_block: bool
     """Should Pike create and use a default code block"""
+    inline_code: bool
+    """Should Pike create and use a default inline code block"""
 
 
 class ConfigT(TypedDict):
