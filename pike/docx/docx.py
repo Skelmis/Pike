@@ -245,6 +245,7 @@ class Docx:
         new_style.font.small_caps = False
         new_style.font.color.rgb = RGBColor(192, 80, 77)
         new_style.font.name = "Liberation Mono"
+        new_style.font.underline = False
 
     def _configure_for_codeblocks(self):
         style_name: str = "_Pike_Code_Block"
