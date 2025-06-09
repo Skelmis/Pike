@@ -29,11 +29,13 @@ class Engine:
         load_default_plugins: bool = True,
         load_default_custom_commands: bool = True,
         global_variables: dict[str, Any] = None,
+        excluded_paths: list[str] = None,
     ) -> None:
         self.base_directory: Path = base_directory
         self.config_directory: Path = base_directory / "configuration"
         self.config: structs.ConfigT = configuration
         self.global_variables = global_variables
+        self.excluded_paths: list[str] = excluded_paths or []
 
         self.files: list[File] = []
         self._layout_file: File | None = None
@@ -295,6 +297,11 @@ class Engine:
                 layout_file = File(md_file, engine=self, ignore_id_check=True)
             elif md_file.parent.name == self.config["output_directory"]:
                 # Skip output doc if exists
+                continue
+            elif any(
+                excluded_path in str(md_file) for excluded_path in self.excluded_paths
+            ):
+                # Path is ignored, exclude from search
                 continue
             else:
                 self.files.append(File(md_file, engine=self))

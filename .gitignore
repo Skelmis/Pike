@@ -3,3 +3,5 @@ example_report/documents
 poetry.lock
 docs/_build
 *.pyc
+*.tmp
+/example_report/.~lock.Example Report.pdf#
