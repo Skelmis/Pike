@@ -110,6 +110,7 @@ class Engine:
         base_directory: Path,
         *,
         load_default_plugins: bool = True,
+        excluded_paths: list[str] = None,
     ) -> Engine:
         """Given a report on disk, load the engine.
 
@@ -119,6 +120,11 @@ class Engine:
             Where the report is located
         load_default_plugins : bool
             Whether to load the default plugins.
+        excluded_paths : list[str]
+            A list of strings to ignore if found in
+            the directory path of a given markdown file.
+
+            Good examples are `excluded_paths=['.venv']`
         """
         checks.ensure_config_exists(Path(base_directory))
         config: structs.ConfigT = utils.read_file_as_json(
@@ -135,6 +141,7 @@ class Engine:
             load_default_plugins=load_default_plugins,
             global_variables=global_variables,
             configuration=config,
+            excluded_paths=excluded_paths,
         )
 
     def load_default_injections(self) -> None:
