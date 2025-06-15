@@ -147,6 +147,7 @@ class Engine:
     def load_default_injections(self) -> None:
         """Loads a bunch of default, useful plugins"""
         self.register_plugin(injections.raise_on_todo)
+        self.register_file_plugin("insert_file_as_code", injections.insert_file_as_code)
 
     def load_default_custom_commands(self) -> None:
         """Loads a bunch of default custom commands.
@@ -154,6 +155,7 @@ class Engine:
         Currently, these are:
         - add_page_break
         - insert_text
+        - insert_soft_break
         """
         self.add_custom_command(
             "add_page_break",

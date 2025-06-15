@@ -5,6 +5,7 @@ import re
 import typing
 from base64 import b64decode, b64encode
 from io import StringIO
+from pathlib import Path
 from typing import Final, Any
 
 import commons
