@@ -1,7 +1,8 @@
 .idea
 example_report/documents
-poetry.lock
+uv.lock
 docs/_build
 *.pyc
 *.tmp
 /example_report/.~lock.Example Report.pdf#
+.venv
