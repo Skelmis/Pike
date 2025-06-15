@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Final, Any
 
 import commons
+from skelmis.docx.enum.text import WD_TAB_LEADER
+from skelmis.docx.shared import Length
 from skelmis.docx.text.paragraph import Paragraph
 from skelmis.docx.text.run import Run
 from pydantic import BaseModel
@@ -232,4 +234,21 @@ def insert_text(
         paragraph=current_paragraph,
         document=docx.template_file,
         current_run=current_run,
+    )
+
+
+def insert_table_of_contents(
+    docx: Docx,
+    levels: int = 3,
+    starting_level: int = 1,
+    format_table_as_links: bool = True,
+    show_page_numbers: bool = True,
+    hide_page_numbers_for_heading_range: str | None = None,
+):
+    docx.current_paragraph.insert_table_of_contents(
+        levels=levels,
+        starting_level=starting_level,
+        format_table_as_links=format_table_as_links,
+        show_page_numbers=show_page_numbers,
+        hide_page_numbers_for_heading_range=hide_page_numbers_for_heading_range,
     )

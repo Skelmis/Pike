@@ -156,6 +156,7 @@ class Engine:
         - add_page_break
         - insert_text
         - insert_soft_break
+        - insert_table_of_contents
         """
         self.add_custom_command(
             "add_page_break",
@@ -170,6 +171,11 @@ class Engine:
         self.add_custom_command(
             "insert_soft_break",
             commands.insert_soft_break,
+            provide_docx_instance=True,
+        )
+        self.add_custom_command(
+            "insert_table_of_contents",
+            commands.insert_table_of_contents,
             provide_docx_instance=True,
         )
 
@@ -287,6 +293,7 @@ class Engine:
             docx_file = output_directory / f"{output_document_name}.docx"
 
             if self.config["output_files"]["pdf"]:
+                utility.update_toc(docx_file)
                 utility.document_to_pdf(docx_file)
                 shutil.move(
                     f"{output_document_name}.pdf",

@@ -21,6 +21,9 @@ Insert a page break in the current location:
 Insert a file as code:
 {{this.plugins.insert_file_as_code("main.py")}}
 
+Insert a table of contents:
+{{insert_table_of_contents()}}
+
 Custom commands also work in tables:
 | Header      |
 | ----------- |
