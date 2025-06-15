@@ -252,3 +252,14 @@ def insert_table_of_contents(
         show_page_numbers=show_page_numbers,
         hide_page_numbers_for_heading_range=hide_page_numbers_for_heading_range,
     )
+
+
+def insert_bookmark(docx: Docx, bookmark_name: str, display_text: str = None):
+    if display_text is None:
+        display_text = ""
+
+    docx.current_paragraph.add_bookmark(bookmark_name, display_text)
+
+
+def insert_internal_hyperlink(docx: Docx, bookmark_name: str, display_text: str):
+    docx.current_paragraph.add_internal_hyperlink(bookmark_name, display_text)

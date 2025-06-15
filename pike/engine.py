@@ -157,6 +157,8 @@ class Engine:
         - insert_text
         - insert_soft_break
         - insert_table_of_contents
+        - insert_bookmark
+        - insert_internal_hyperlink
         """
         self.add_custom_command(
             "add_page_break",
@@ -176,6 +178,16 @@ class Engine:
         self.add_custom_command(
             "insert_table_of_contents",
             commands.insert_table_of_contents,
+            provide_docx_instance=True,
+        )
+        self.add_custom_command(
+            "insert_bookmark",
+            commands.insert_bookmark,
+            provide_docx_instance=True,
+        )
+        self.add_custom_command(
+            "insert_internal_hyperlink",
+            commands.insert_internal_hyperlink,
             provide_docx_instance=True,
         )
 

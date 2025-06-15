@@ -6,6 +6,8 @@ The Jinja functions Pike exposes.
 
 You need to review the file `jinja.md` in order to view how these work functionally.
 
+Insert an internal hyperlink to a bookmark:
+{{insert_internal_hyperlink("MyFirstBookmark", "Click ME to go to the bookmark")}}
 
 Raise a comment for review without it ending up in the final document:
 {{comment("This is a comment")}}
@@ -24,6 +26,12 @@ Insert a file as code:
 
 Insert a table of contents:
 {{insert_table_of_contents()}}
+
+Insert a bookmark:
+{{insert_bookmark("MyFirstBookmark", "Hello I am a bookmark")}}
+
+Bookmarks can also not have associated text:
+{{insert_bookmark("MySecondBookmark")}}
 
 Custom commands also work in tables:
 | Header      |
