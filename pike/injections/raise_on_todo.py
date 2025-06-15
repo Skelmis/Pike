@@ -18,3 +18,14 @@ def raise_on_todo(engine: Engine) -> None:
             if todo_pos != -1:
                 todo_contents = line[todo_pos:]
                 log.warning("TODO found: '%s'\n\tFile: %s", todo_contents, file.file)
+
+        for k, v in file.variables.items():
+            if (isinstance(v, str) and "todo" in v.lower()) or (
+                isinstance(v, list) and any("todo" in i.lower() for i in v)
+            ):
+                log.warning(
+                    "TODO found: '%s'\n\tFile: %s\n\tFrontmatter key: %s",
+                    v.lower(),
+                    file.file,
+                    k,
+                )
