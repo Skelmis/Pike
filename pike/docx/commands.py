@@ -258,8 +258,14 @@ def insert_bookmark(docx: Docx, bookmark_name: str, display_text: str = None):
     if display_text is None:
         display_text = ""
 
+    if docx.current_paragraph is None:
+        docx.current_paragraph = docx.template_file.add_paragraph()
+
     docx.current_paragraph.add_bookmark(bookmark_name, display_text)
 
 
 def insert_internal_hyperlink(docx: Docx, bookmark_name: str, display_text: str):
+    if docx.current_paragraph is None:
+        docx.current_paragraph = docx.template_file.add_paragraph()
+
     docx.current_paragraph.add_internal_hyperlink(bookmark_name, display_text)
