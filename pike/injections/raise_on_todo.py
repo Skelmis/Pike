@@ -21,11 +21,16 @@ def raise_on_todo(engine: Engine) -> None:
 
         for k, v in file.variables.items():
             if (isinstance(v, str) and "todo" in v.lower()) or (
-                isinstance(v, list) and any("todo" in i.lower() for i in v)
-            ):
+                isinstance(v, list) and any("todo" in str(i).lower() for i in v)
+            ) or (not isinstance (v, list) and "todo" in str(v).lower()):
+                if isinstance(v, list):
+                    for item in v:
+                        if "todo" in str(item).lower():
+                            v = item
+
                 log.warning(
                     "TODO found: '%s'\n\tFile: %s\n\tFrontmatter key: %s",
-                    v.lower(),
+                    str(v).lower(),
                     file.file,
                     k,
                 )

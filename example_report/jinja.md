@@ -1,6 +1,9 @@
 ---
 id: jinja
 description: TODO This needs completing
+list:
+  - 1
+  - TODO well actually lists work fine now
 ---
 The Jinja functions Pike exposes. 
 
