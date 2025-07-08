@@ -31,7 +31,7 @@ Insert a table of contents:
 {{insert_table_of_contents()}}
 
 Insert a bookmark:
-{{insert_bookmark("MyFirstBookmark", "Hello I am a bookmark")}}
+{{insert_bookmark("MyFirstBookmark", "Hello I am a bookmark that's **bold** and *italic*")}}
 
 Bookmarks can also not have associated text:
 {{insert_bookmark("MySecondBookmark")}}

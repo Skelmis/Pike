@@ -189,7 +189,6 @@ class Table:
 
         current_run: CurrentRun = CurrentRun()
         current_row_entries: list[Entry] = []
-        flat = utils.flatten_ast(ast)
         for token in utils.flatten_ast(ast):
             match token.type:
                 # TODO Support underline and highlighting

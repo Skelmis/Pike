@@ -15,6 +15,7 @@ from skelmis.docx.text.paragraph import Paragraph
 from skelmis.docx.text.run import Run
 from pydantic import BaseModel
 
+from pike import structs
 from pike.docx import CurrentRun
 
 if typing.TYPE_CHECKING:
@@ -261,7 +262,14 @@ def insert_bookmark(docx: Docx, bookmark_name: str, display_text: str = None):
     if docx.current_paragraph is None:
         docx.current_paragraph = docx.template_file.add_paragraph()
 
-    docx.current_paragraph.add_bookmark(bookmark_name, display_text)
+    as_formatting: structs.Cell = structs.Table.text_to_cell(display_text)
+    current_paragraph = docx.current_paragraph
+    current_paragraph._start_bookmark(
+        bookmark_name,
+        bookmark_id=re.sub(r"\s+", "_", bookmark_name),
+    )
+    docx.insert_cell(as_formatting)
+    current_paragraph._end_bookmark(bookmark_name)
 
 
 def insert_internal_hyperlink(docx: Docx, bookmark_name: str, display_text: str):
