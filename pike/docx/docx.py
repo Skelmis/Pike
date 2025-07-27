@@ -160,21 +160,24 @@ class Docx:
             self._configure_for_inline_code()
 
         if self.engine.docx_header is not None:
-            as_formatting: structs.Cell = structs.Table.text_to_cell(
-                self.engine.docx_header
-            )
-            p = self.template_file.sections[0].header.paragraphs[0]
-            self.current_paragraph = p
-            self.insert_cell(as_formatting)
+            headers = self.engine.docx_header.split("\t")
+            for entrant in headers:
+                as_formatting: structs.Cell = structs.Table.text_to_cell(entrant)
+                p = self.template_file.sections[0].header.paragraphs[0]
+                self.current_paragraph = p
+                self.insert_cell(as_formatting)
+                self.current_paragraph.add_run("\t")
+
             self.current_paragraph = None
 
         if self.engine.docx_footer is not None:
-            as_formatting: structs.Cell = structs.Table.text_to_cell(
-                self.engine.docx_footer
-            )
-            p = self.template_file.sections[0].footer.paragraphs[0]
-            self.current_paragraph = p
-            self.insert_cell(as_formatting)
+            footer = self.engine.docx_footer.split("\t")
+            for entrant in footer:
+                as_formatting: structs.Cell = structs.Table.text_to_cell(entrant)
+                p = self.template_file.sections[0].footer.paragraphs[0]
+                self.current_paragraph = p
+                self.insert_cell(as_formatting)
+                self.current_paragraph.add_run("\t")
 
         self.walk_ast(template_file=self.template_file, ast=ast)
         self.template_file.save(filename)

@@ -21,7 +21,9 @@ def get_referenced_files(file: File) -> list[File]:
 
 def main():
     start = time.time()
-    engine = Engine.load_from_directory(Path("."), excluded_paths=['README.md', '.venv'])
+    engine = Engine.load_from_directory(
+        Path("."), excluded_paths=["README.md", ".venv"]
+    )
     engine.docx_header = "**Example Report**"
     engine.docx_footer = "Example Footers\tMiddle\tRight"
     engine.register_file_plugin("get_referenced_files", get_referenced_files)
