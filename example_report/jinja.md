@@ -10,7 +10,7 @@ The Jinja functions Pike exposes.
 You need to review the file `jinja.md` in order to view how these work functionally.
 
 Insert an internal hyperlink to a bookmark:
-{{insert_internal_hyperlink("MyFirstBookmark", "Click ME to go to the bookmark")}}
+{{insert_internal_hyperlink("MyFirstBookmark", "Click **ME** to go to the bookmark")}}
 
 Raise a comment for review without it ending up in the final document:
 {{comment("This is a comment")}}
