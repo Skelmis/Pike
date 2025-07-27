@@ -7,9 +7,11 @@ from base64 import b64decode, b64encode
 from io import StringIO
 from pathlib import Path
 from typing import Final, Any
+from unittest.mock import Mock
 
 import commons
 from skelmis.docx.enum.text import WD_TAB_LEADER
+from skelmis.docx.oxml import OxmlElement
 from skelmis.docx.shared import Length
 from skelmis.docx.text.paragraph import Paragraph
 from skelmis.docx.text.run import Run
@@ -276,4 +278,12 @@ def insert_internal_hyperlink(docx: Docx, bookmark_name: str, display_text: str)
     if docx.current_paragraph is None:
         docx.current_paragraph = docx.template_file.add_paragraph()
 
-    docx.current_paragraph.add_internal_hyperlink(bookmark_name, display_text)
+    hyperlink = docx.current_paragraph.add_internal_hyperlink(bookmark_name)
+
+    fake_para = Mock()
+    fake_para.add_run = hyperlink.insert_run
+    as_formatting: structs.Cell = structs.Table.text_to_cell(display_text)
+    old_para = docx.current_paragraph
+    docx.current_paragraph = fake_para
+    docx.insert_cell(as_formatting)
+    docx.current_paragraph = old_para
