@@ -20,7 +20,6 @@ log = logging.getLogger(__name__)
 
 
 class Engine:
-
     def __init__(
         self,
         base_directory: Path,
@@ -51,7 +50,7 @@ class Engine:
         self.docx_header: str | None = None
         self.docx_footer: str | None = None
 
-        if self.config["use_sandbox"]:
+        if self.config.use_sandbox:
             self.jinja_env: SandboxedEnvironment | Environment = SandboxedEnvironment(
                 lstrip_blocks=True,
                 undefined=jinja2.StrictUndefined,
@@ -105,6 +104,46 @@ class Engine:
         return self
 
     @classmethod
+    def load_from_configuration(
+        cls,
+        base_directory: Path,
+        *,
+        configuration: structs.ConfigT,
+        variables: dict[str, Any] = None,
+        load_default_plugins: bool = True,
+        excluded_paths: list[str] = None,
+    ) -> Engine:
+        """Load the engine using the provided variables
+
+        Parameters
+        ----------
+        base_directory : Path
+            Where the report is located
+        configuration : structs.ConfigT
+            The configuration to use when loading the engine
+        variables: dict[str, Any]
+            Pre-defined variables like client name to use
+        load_default_plugins : bool
+            Whether to load the default plugins.
+        excluded_paths : list[str]
+            A list of strings to ignore if found in
+            the directory path of a given markdown file.
+
+            Good examples are `excluded_paths=['.venv']`
+        """
+        if variables is None:
+            variables = {}
+
+        global_variables = {**variables, "globals": variables}
+        return cls(
+            base_directory,
+            load_default_plugins=load_default_plugins,
+            global_variables=global_variables,
+            configuration=configuration,
+            excluded_paths=excluded_paths,
+        )
+
+    @classmethod
     def load_from_directory(
         cls,
         base_directory: Path,
@@ -127,8 +166,8 @@ class Engine:
             Good examples are `excluded_paths=['.venv']`
         """
         checks.ensure_config_exists(Path(base_directory))
-        config: structs.ConfigT = utils.read_file_as_json(
-            base_directory / "configuration" / "config.json"
+        config: structs.ConfigT = structs.ConfigT(
+            **utils.read_file_as_json(base_directory / "configuration" / "config.json")
         )
         checks.ensure_layout_exists(base_directory, config)
         variables = utils.read_file_as_json(
@@ -279,20 +318,20 @@ class Engine:
 
         self._layout_file.inject_variables()
 
-        output_directory = self.base_directory / self.config["output_directory"]
+        output_directory = self.base_directory / self.config.output_directory
         output_directory.mkdir(exist_ok=True)
         output_document_name = self.inject_variables(
-            self.config["output_document_name"], self.global_variables
+            self.config.output_document_name, self.global_variables
         )
 
-        if self.config["output_files"]["markdown"]:
+        if self.config.output_files.markdown:
             with open(
                 output_directory / f"{output_document_name}.md",
                 "w",
             ) as f:
                 f.write(self._layout_file.content)
 
-        if self.config["output_files"]["docx"] or self.config["output_files"]["pdf"]:
+        if self.config.output_files.docx or self.config.output_files.pdf:
             docx = Docx(self)
             docx.import_commands_from_engine()
 
@@ -304,7 +343,7 @@ class Engine:
 
             docx_file = output_directory / f"{output_document_name}.docx"
 
-            if self.config["output_files"]["pdf"]:
+            if self.config.output_files.pdf:
                 utility.update_toc(docx_file)
                 utility.document_to_pdf(docx_file)
                 shutil.move(
@@ -312,18 +351,18 @@ class Engine:
                     output_directory / f"{output_document_name}.pdf",
                 )
 
-            if not self.config["output_files"]["docx"]:
+            if not self.config.output_files.docx:
                 docx_file.unlink()
 
     def locate_all_files(self) -> None:
         layout_file = None
         for md_file in Path(self.base_directory).rglob("*.md"):
             if (
-                md_file.name == self.config["layout_file"]
+                md_file.name == self.config.layout_file
                 and md_file.parent == self.config_directory
             ):
                 layout_file = File(md_file, engine=self, ignore_id_check=True)
-            elif md_file.parent.name == self.config["output_directory"]:
+            elif md_file.parent.name == self.config.output_directory:
                 # Skip output doc if exists
                 continue
             elif any(

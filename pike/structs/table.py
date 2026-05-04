@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
-from imaplib import Literal
 from io import StringIO
 from pathlib import Path
 from typing import cast

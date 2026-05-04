@@ -27,15 +27,15 @@ def ensure_config_exists(base_directory: Path):
 
 
 def ensure_layout_exists(base_directory: Path, config: structs.ConfigT):
-    config_dir = base_directory / "configuration"
+    config_dir = base_directory / config.configuration_directory
     config_dir.mkdir(exist_ok=True)
-    if not (config_dir / config.get("layout_file", "layout.md")).exists():
-        (config_dir / "layout.md").touch(exist_ok=True)
+    if not (config_dir / config.layout_file).exists():
+        (config_dir / config.layout_file).touch(exist_ok=True)
         log.critical(
             "Missing template file. "
             "I've created one, now please go fill it in"
             "\n\tFile: %s",
-            config_dir / config.get("layout_file", "layout.md"),
+            config_dir / config.layout_file,
         )
 
         log.critical("Please resolve the above issues before continuing")

@@ -226,10 +226,10 @@ def insert_text(
     if inline is True:
         # Inline code block
         if isinstance(current_paragraph, Run):
-            current_paragraph.style = docx.engine.config["styles"]["inline_code"]
+            current_paragraph.style = docx.engine.config.styles.inline_code
         else:
             current_paragraph = current_paragraph.add_run(
-                style=docx.engine.config["styles"]["inline_code"]
+                style=docx.engine.config.styles.inline_code
             )
 
     docx.add_text(

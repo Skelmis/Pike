@@ -1,5 +1,6 @@
 .idea
 example_report/documents
+example_virtual_report/documents
 uv.lock
 docs/_build
 *.pyc

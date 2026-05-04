@@ -45,15 +45,9 @@ html_attribute_pattern: re.Pattern = re.compile(
 class Docx:
     def __init__(self, engine: Engine) -> None:
         self.engine: Engine = engine
-        self.enable_ordered_lists: bool = engine.config["docx_create_styles"][
-            "ordered_lists"
-        ]
-        self.enable_code_blocks: bool = engine.config["docx_create_styles"][
-            "code_block"
-        ]
-        self.enable_inline_code: bool = engine.config["docx_create_styles"][
-            "inline_code"
-        ]
+        self.enable_ordered_lists: bool = engine.config.docx_create_styles.ordered_lists
+        self.enable_code_blocks: bool = engine.config.docx_create_styles.code_block
+        self.enable_inline_code: bool = engine.config.docx_create_styles.inline_code
         self.commands: dict[str, Callable[[...], ...] | Callable[[], ...]] = {
             # A built-in NOP for commands and injections
             # which need an out to avoid displaying None
@@ -149,8 +143,8 @@ class Docx:
         markdown = utils.create_markdown_it()
         ast = markdown.parse(content)
         self.template_file = (
-            Document(self.engine.config["docx_template"])
-            if self.engine.config["docx_template"] != ""
+            Document(self.engine.config.docx_template)
+            if self.engine.config.docx_template != ""
             else Document()
         )
         if self.enable_ordered_lists:
@@ -235,7 +229,7 @@ class Docx:
 
     def _configure_for_inline_code(self):
         style_name: str = "_Pike_Inline_Code"
-        self.engine.config["styles"]["inline_code"] = style_name
+        self.engine.config.styles.inline_code = style_name
 
         if style_name in self.template_file.styles:
             # No need to duplicate
@@ -252,7 +246,7 @@ class Docx:
 
     def _configure_for_codeblocks(self):
         style_name: str = "_Pike_Code_Block"
-        self.engine.config["styles"]["code_block"] = style_name
+        self.engine.config.styles.code_block = style_name
 
         if style_name in self.template_file.styles:
             # No need to duplicate
@@ -283,7 +277,7 @@ class Docx:
 
         p = self.template_file.add_paragraph(
             text,
-            style=self.engine.config["styles"]["code_block"],
+            style=self.engine.config.styles.code_block,
         )
         if self.enable_code_blocks:
             shd = OxmlElement("w:shd")
@@ -363,17 +357,19 @@ class Docx:
                         # We need to deal with list nesting's
                         nesting_level = current_list.nesting.value
                         if current_list.list_type == "bullet":
-                            style: str = self.engine.config["styles"]["bullet_lists"][
-                                f"level_{nesting_level}"  # noqa
-                            ]
+                            bullets: structs.ListT = (
+                                self.engine.config.styles.bullet_lists
+                            )
+                            style: str = getattr(bullets, f"level_{nesting_level}")
                         elif self.enable_ordered_lists:
                             style: str = "List Number"
                             if nesting_level != 1:
                                 style += f" {nesting_level}"
                         else:
-                            style: str = self.engine.config["styles"]["ordered_lists"][
-                                f"level_{nesting_level}"  # noqa
-                            ]
+                            bullets: structs.ListT = (
+                                self.engine.config.styles.ordered_lists
+                            )
+                            style: str = getattr(bullets, f"level_{nesting_level}")
 
                         self.current_paragraph = template_file.add_paragraph(
                             style=style
@@ -435,7 +431,7 @@ class Docx:
                     docx_table = template_file.add_table(
                         rows=len(table_model.rows),
                         cols=len(table_model.rows[0].cells),
-                        style=self.engine.config["styles"]["table"],
+                        style=self.engine.config.styles.table,
                     )
                     for row_idx, row in enumerate(docx_table.rows):
                         for cell_idx, cell in enumerate(row.cells):
@@ -640,7 +636,7 @@ class Docx:
 
                 case "code_inline":
                     run = self.current_paragraph.add_run(
-                        style=self.engine.config["styles"]["inline_code"]
+                        style=self.engine.config.styles.inline_code
                     )
                     self.add_text(
                         current_token.content,

@@ -48,7 +48,7 @@ class File:
     @property
     def id(self) -> str:
         if (
-            self.file.name == self.engine.config["layout_file"]
+            self.file.name == self.engine.config.layout_file
             and self.file.parent == self.engine.config_directory
         ):
             return self.file.name
