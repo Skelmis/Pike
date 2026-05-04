@@ -8,6 +8,7 @@ from functools import partial
 from pathlib import Path
 from unittest.mock import Mock
 
+from docutils.nodes import paragraph
 from skelmis.docx import Document
 from skelmis.docx.enum.style import WD_STYLE_TYPE
 from skelmis.docx.enum.table import WD_TABLE_ALIGNMENT
@@ -59,6 +60,7 @@ class Docx:
         # I'd like to refactor their usage but eh
         self.template_file: Document | None = None
         self.current_paragraph: Paragraph | None = None
+        self.last_paragraph: Paragraph | None = None
 
     def import_commands_from_engine(self):
         for command in self.engine._custom_commands_to_add:
@@ -116,7 +118,6 @@ class Docx:
                     self.add_text(
                         item,
                         current_run=entry.style,
-                        document=self.template_file,
                         paragraph=self.current_paragraph,
                     )
 
@@ -173,35 +174,58 @@ class Docx:
                 self.insert_cell(as_formatting)
                 self.current_paragraph.add_run("\t")
 
+            self.current_paragraph = None
+
         self.walk_ast(template_file=self.template_file, ast=ast)
         self.template_file.save(filename)
         return Path(filename).absolute()
 
-    @classmethod
     def add_image(
-        cls,
+        self,
         image_src: str,
         *,
-        template_file: Document,
         width: Cm | None = None,
         height: Cm | None = None,
         title: str = None,
         alt_text: str = None,
     ):
         # TODO Implement title and alt text
-        template_file.add_picture(image_src, width=width, height=height)
+        self.current_paragraph = self.create_paragraph()
+        run = self.current_paragraph.add_run()
+        run.add_picture(image_src, width, height)
 
-    @classmethod
+    def create_paragraph(
+        self,
+        text: str = "",
+        style: str | ParagraphStyle | None = None,
+    ) -> Paragraph:
+        if (not self.engine.config.insert_at_last_paragraph) or (
+            self.current_paragraph is None and self.last_paragraph is None
+        ):
+            return self.template_file.add_paragraph(text=text, style=style)
+
+        current_paragraph = self.current_paragraph
+        if current_paragraph is None:
+            current_paragraph = self.last_paragraph
+
+        new_p = OxmlElement("w:p")
+        current_paragraph._p.addnext(new_p)
+        new_para = Paragraph(new_p, current_paragraph._parent)
+        if text:
+            new_para.add_run(text)
+        if style is not None:
+            new_para.style = style
+        return new_para
+
     def add_text(
-        cls,
+        self,
         content: str,
         *,
-        document: Document,
         current_run: CurrentRun,
         paragraph: Paragraph | Run = None,
     ) -> Run:
         if paragraph is None:
-            paragraph = document.add_paragraph()
+            paragraph = self.current_paragraph = self.create_paragraph()
 
         if (
             isinstance(paragraph, Run)
@@ -275,9 +299,8 @@ class Docx:
         if self.enable_code_blocks:
             self._configure_for_codeblocks()
 
-        p = self.template_file.add_paragraph(
-            text,
-            style=self.engine.config.styles.code_block,
+        p = self.current_paragraph = self.create_paragraph(
+            text, style=self.engine.config.styles.code_block
         )
         if self.enable_code_blocks:
             shd = OxmlElement("w:shd")
@@ -351,7 +374,7 @@ class Docx:
                     # for usage with bullet points n such
                     current_list: List | None = variables.get_current_list()
                     if current_list is None:
-                        self.current_paragraph = template_file.add_paragraph()
+                        self.current_paragraph = self.create_paragraph()
 
                     else:
                         # We need to deal with list nesting's
@@ -371,9 +394,7 @@ class Docx:
                             )
                             style: str = getattr(bullets, f"level_{nesting_level}")
 
-                        self.current_paragraph = template_file.add_paragraph(
-                            style=style
-                        )
+                        self.current_paragraph = self.create_paragraph(style=style)
                         if (
                             list_order_requires_restart
                             and current_list.list_type != "bullet"
@@ -383,16 +404,16 @@ class Docx:
                             list_order_requires_restart = False
                 case "paragraph_close":
                     # Reset the current paragraph to null
+                    self.last_paragraph = self.current_paragraph
                     self.current_paragraph = None
                 case "heading_close":
+                    self.last_paragraph = self.current_paragraph
                     self.current_paragraph = None
                 case "softbreak":
                     # This represents a newline
                     if self.current_paragraph is None:
                         # Unsure why this is None here...
-                        self.current_paragraph = self.current_paragraph = (
-                            template_file.add_paragraph()
-                        )
+                        self.current_paragraph = self.create_paragraph()
                     else:
                         # Else otherwise it'd be two newlines
                         self.current_paragraph.add_run().add_break()
@@ -416,7 +437,6 @@ class Docx:
                             self.add_text(
                                 item,
                                 paragraph=self.current_paragraph,
-                                document=template_file,
                                 current_run=variables.current_run,
                             )
                 case "table_open":
@@ -427,6 +447,12 @@ class Docx:
                         current_idx=current_token_index,
                     )
                     current_token_index += len(table_ast)
+                    if self.engine.config.insert_at_last_paragraph:
+                        raise ValueError(
+                            "Tables are not yet supported in 'insert_at_last_paragraph' mode. "
+                            "See https://github.com/Skelmis/Pike/issues/36"
+                        )
+
                     table_model = structs.Table.from_ast(table_ast)
                     docx_table = template_file.add_table(
                         rows=len(table_model.rows),
@@ -497,7 +523,6 @@ class Docx:
                                         self.add_text(
                                             item,
                                             current_run=entry.style,
-                                            document=template_file,
                                             paragraph=current_cell_paragraph.add_run(),
                                         )
 
@@ -508,7 +533,7 @@ class Docx:
                         and ast[current_token_index].type == "table_open"
                     ):
                         if self.current_paragraph is None:
-                            self.current_paragraph = self.template_file.add_paragraph()
+                            self.current_paragraph = self.create_paragraph()
                         else:
                             self.current_paragraph.add_run().add_break()
 
@@ -539,7 +564,8 @@ class Docx:
                     variables.remove_current_list()
                 case "heading_open":
                     level = int(current_token.tag[-1])
-                    self.current_paragraph = template_file.add_heading(level=level)
+                    style = "Title" if level == 0 else "Heading %d" % level
+                    self.current_paragraph = self.create_paragraph(style=style)
 
                 case "html_block" | "html_inline":
                     # Figure out the type of HTML we have
@@ -576,7 +602,6 @@ class Docx:
 
                         self.add_image(
                             src,
-                            template_file=template_file,
                             width=Cm(width),
                             height=Cm(height),
                             title=title,
@@ -618,7 +643,6 @@ class Docx:
                                 self.add_text(
                                     item,
                                     paragraph=self.current_paragraph,
-                                    document=template_file,
                                     current_run=variables.current_run,
                                 )
 
@@ -629,7 +653,6 @@ class Docx:
                     caption = current_token.attrs.get("title", None)
                     self.add_image(
                         img_src,
-                        template_file=template_file,
                         title=caption,
                         alt_text=alt_text,
                     )
@@ -641,7 +664,6 @@ class Docx:
                     self.add_text(
                         current_token.content,
                         paragraph=run,
-                        document=template_file,
                         current_run=variables.current_run,
                     )
 
@@ -659,7 +681,8 @@ class Docx:
                     continue
                 case "hr":
                     # Insert a horizontal line
-                    template_file.add_paragraph().draw_paragraph_border(top=True)
+                    self.current_paragraph = self.create_paragraph()
+                    self.current_paragraph.draw_paragraph_border(top=True)
 
             # Next token time!
             current_token_index += 1

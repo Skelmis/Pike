@@ -74,3 +74,8 @@ class ConfigT(BaseModel):
     """Whether or not to use a sandboxed Jinja2 environment"""
     docx_create_styles: CreationTypesT = CreationTypesT()
     """Should Pike create default styles?"""
+    insert_at_last_paragraph: bool = False
+    """Useful for inserting text after a given paragraph.
+    
+    Not enabled by default as it breaks items that don't deal 
+    with text such as inserting images which"""

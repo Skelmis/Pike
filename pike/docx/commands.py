@@ -148,21 +148,30 @@ def split_str_into_command_blocks(text: str) -> list[str | Command]:
         except ValueError:
             data.append(entry)
 
+    if (
+        len(data) == 2
+        and isinstance(data[0], Command)
+        and data[0].command == "NOP"
+        and data[1] == "\n"
+    ):
+        # A no-op shouldn't be creating new lines in documents
+        return [data[0]]
+
     return data
 
 
 def insert_page_break(docx: Docx):
     """A custom command to add a page break to the document."""
     docx.template_file.add_page_break()
+    docx.current_paragraph = None
+    docx.last_paragraph = None
 
 
 def insert_soft_break(docx: Docx):
     """Inserts a new soft break, essentially hitting enter."""
     if docx.current_paragraph is None:
         # Unsure why this is None here...
-        docx.current_paragraph = docx.current_paragraph = (
-            docx.template_file.add_paragraph()
-        )
+        docx.current_paragraph = docx.create_paragraph()
     else:
         # Else otherwise it'd be a double up it seems
         docx.current_paragraph.add_run().add_break()
@@ -235,7 +244,6 @@ def insert_text(
     docx.add_text(
         text,
         paragraph=current_paragraph,
-        document=docx.template_file,
         current_run=current_run,
     )
 

@@ -29,5 +29,6 @@
     "docx": true,
     "pdf": true
   },
-  "use_sandbox": true
+  "use_sandbox": true,
+  "insert_at_last_paragraph": false
 }
