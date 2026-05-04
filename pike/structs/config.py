@@ -78,4 +78,4 @@ class ConfigT(BaseModel):
     """Useful for inserting text after a given paragraph.
     
     Not enabled by default as it breaks items that don't deal 
-    with text such as inserting images which"""
+    with text such as inserting tables which still go to the end"""
