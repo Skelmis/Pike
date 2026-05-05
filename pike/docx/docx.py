@@ -8,7 +8,6 @@ from functools import partial
 from pathlib import Path
 from unittest.mock import Mock
 
-from docutils.nodes import paragraph
 from skelmis.docx import Document
 from skelmis.docx.enum.style import WD_STYLE_TYPE
 from skelmis.docx.enum.table import WD_TABLE_ALIGNMENT
