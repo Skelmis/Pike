@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 
 
 class Engine:
+
     def __init__(
         self,
         base_directory: Path,
@@ -29,6 +30,7 @@ class Engine:
         load_default_custom_commands: bool = True,
         global_variables: dict[str, Any] = None,
         excluded_paths: list[str] = None,
+        require_layout_file: bool = True,
     ) -> None:
         self.base_directory: Path = base_directory
         self.config_directory: Path = base_directory / "configuration"
@@ -46,6 +48,8 @@ class Engine:
         self._custom_commands_to_add: list[tuple[str, Callable[[...], ...], bool]] = []
         self._file_variables: dict[str, dict[str, Any]] = {}
         self._folder_variables: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+        # Set to false if not planning on generating an append based document
+        self.require_layout_file: bool = require_layout_file
 
         self.docx_header: str | None = None
         self.docx_footer: str | None = None
@@ -316,7 +320,17 @@ class Engine:
         for plugin in self._plugins:
             plugin(self)
 
-        self._layout_file.inject_variables()
+        if self._layout_file is None and (
+            self.config.output_files.markdown
+            or self.config.output_files.docx
+            or self.config.output_files.pdf
+        ):
+            raise ValueError(
+                "A layout file must be provided to use Engine.run with output files"
+            )
+
+        if self._layout_file is not None:
+            self._layout_file.inject_variables()
 
         output_directory = self.base_directory / self.config.output_directory
         output_directory.mkdir(exist_ok=True)
@@ -373,7 +387,7 @@ class Engine:
             else:
                 self.files.append(File(md_file, engine=self))
 
-        if layout_file is None:
+        if self.require_layout_file and layout_file is None:
             raise ValueError("Missing layout.md")
 
         self._layout_file = layout_file
