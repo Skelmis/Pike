@@ -174,7 +174,10 @@ def insert_soft_break(docx: Docx):
         docx.current_paragraph = docx.create_paragraph()
     else:
         # Else otherwise it'd be a double up it seems
-        docx.current_paragraph.add_run().add_break()
+        if isinstance(docx.current_paragraph, Run):
+            docx.current_paragraph.add_break()
+        else:
+            docx.current_paragraph.add_run().add_break()
 
 
 def insert_text(
